@@ -23,7 +23,10 @@ As decisões de projeto, a integração entre os módulos e a validação dos re
 |---|---|---|
 | Estrutura de pastas e `pyproject.toml` | criação da estrutura com base na sugerida no enunciado do trabalho | solicitação da inclusão dos módulos `safety/` e `tracing/` |
 | README, `docs/architecture.md`, `.gitignore` e `.env.example` | elaboração dos esqueletos iniciais | revisão e preenchimento das seções conforme a implementação avança |
-| Módulos de lógica do agente | _(a preencher conforme o desenvolvimento)_ | _(a preencher conforme o desenvolvimento)_ |
+| `llm/client.py` (cliente do endpoint) | revisão do código | escrita do código: carregamento do `.env`, criação do cliente e função `chat` |
+| `llm/parser.py` (extração da ação da resposta da LLM) | sugestões de melhoria: retornar `None` em vez de uma mensagem de erro, capturar `json.JSONDecodeError` em vez de `except` vazio, validar se o resultado é uma ação (dicionário com `tool` e `args`), proteger o `main()` com `if __name__ == "__main__"`, remover import não usado e alinhar os nomes das chaves ao protocolo | escrita da função com três tentativas de extração (JSON direto, remoção de blocos markdown, trecho entre chaves) |
+| `tests/test_parser.py` | escrita dos casos de teste do parser | execução dos testes e correção do parser conforme as falhas |
+| Módulos restantes (segurança, ferramentas, estados, repair loop) | _(a preencher conforme o desenvolvimento)_ | _(a preencher conforme o desenvolvimento)_ |
 
 ## Verificação
 - Testes automatizados com `pytest`.
