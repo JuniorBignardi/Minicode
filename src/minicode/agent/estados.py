@@ -77,6 +77,7 @@ class Execucao:
         self.arquivos_protegidos = []    # testes que já existiam: não podem ser alterados
         self.arquivos_exigidos = []      # arquivos .py citados na tarefa: precisam existir
         self.originais = {}              # arquivo -> conteúdo que ele tinha antes da primeira alteração
+        self.arquivos_vistos = set()     # arquivos cujo conteúdo o modelo viu na conversa atual da implementação
 
         # verificação
         self.testes_passaram = False

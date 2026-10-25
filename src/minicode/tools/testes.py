@@ -25,6 +25,16 @@ def nomes_dos_testes_que_falharam(saida):
     return nomes
 
 
+def arquivos_dos_testes_que_falharam(saida):
+    # Caminhos dos arquivos dos testes que falharam, lidos das linhas "FAILED tests/x.py::nome" do pytest.
+    arquivos = []
+    for caminho in re.findall(r"^FAILED (\S+?)::", saida, re.M):
+        caminho = caminho.replace("\\", "/")
+        if caminho not in arquivos:
+            arquivos.append(caminho)
+    return arquivos
+
+
 def run_tests(raiz, todos=False):
     # roda o pytest dentro do projeto e devolve (passou, saida)
     # Por padrão para no primeiro teste que falha (-x); com todos=True roda todos e lista todas as falhas.

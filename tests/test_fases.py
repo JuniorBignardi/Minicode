@@ -9,6 +9,12 @@ from minicode.tracing.registro import iniciar_registro
 import pytest
 
 
+def marcar_como_lidos(execucao, raiz):
+    # simula que o modelo já leu os arquivos que existem no projeto (o gate de leitura os libera)
+    for arquivo in raiz.rglob("*.py"):
+        execucao.arquivos_vistos.add(arquivo.relative_to(raiz).as_posix())
+
+
 def chat_falso(respostas):
     # devolve uma resposta pronta por chamada, na ordem
     fila = list(respostas)
@@ -467,6 +473,7 @@ def preparar_reparo_de_teste(tmp_path, restricao="testes"):
     (tmp_path / "tests" / "test_x.py").write_text(ARQUIVO_DE_TESTE, encoding="utf-8")
     execucao.restricao_escrita = restricao
     execucao.testes_que_falharam = ["test_a"]
+    marcar_como_lidos(execucao, tmp_path)
     return execucao, executar_acao
 
 
@@ -631,6 +638,7 @@ def test_arquivo_ja_quebrado_pode_ser_regravado_em_etapas(tmp_path):
     (tmp_path / "a.py").write_text("def f(:\n    x = (\n", encoding="utf-8")
     conteudo = "def f():\n    x = (\n"   # continua quebrado: a escrita não cria um problema novo
 
+    marcar_como_lidos(execucao, tmp_path)
     ok, texto = executar_acao(execucao, tmp_path, {"tool": "write_file", "args": {"path": "a.py", "content": conteudo}})
 
     assert ok is True
@@ -653,6 +661,7 @@ def test_sobrescrever_arquivo_de_teste_apagando_um_teste_e_recusado(tmp_path):
     execucao = preparar_arquivo_de_teste(tmp_path)
     conteudo = "def test_a():\n    assert 1 == 1\n"
 
+    marcar_como_lidos(execucao, tmp_path)
     ok, texto = executar_acao(execucao, tmp_path, {"tool": "write_file", "args": {"path": "tests/test_x.py", "content": conteudo}})
 
     assert ok is False and "test_b" in texto
@@ -664,6 +673,7 @@ def test_sobrescrever_mantendo_ou_acrescentando_testes_e_aceito(tmp_path):
     execucao = preparar_arquivo_de_teste(tmp_path)
     conteudo = DOIS_TESTES + "\n\ndef test_c():\n    assert 3 == 3\n"
 
+    marcar_como_lidos(execucao, tmp_path)
     ok, texto = executar_acao(execucao, tmp_path, {"tool": "write_file", "args": {"path": "tests/test_x.py", "content": conteudo}})
 
     assert ok is True
@@ -675,6 +685,7 @@ def test_o_teste_que_acabou_de_falhar_pode_ser_retirado(tmp_path):
     execucao.testes_que_falharam = ["test_b"]
     conteudo = "def test_a():\n    assert 1 == 1\n"
 
+    marcar_como_lidos(execucao, tmp_path)
     ok, texto = executar_acao(execucao, tmp_path, {"tool": "write_file", "args": {"path": "tests/test_x.py", "content": conteudo}})
 
     assert ok is True
@@ -718,6 +729,7 @@ def test_a_primeira_escrita_guarda_o_conteudo_original(tmp_path):
     execucao, mensagens = preparar_implementacao(tmp_path)
     (tmp_path / "a.py").write_text("x = 1\n", encoding="utf-8")
 
+    marcar_como_lidos(execucao, tmp_path)
     executar_acao(execucao, tmp_path, {"tool": "write_file", "args": {"path": "a.py", "content": "x = 2\n"}})
     executar_acao(execucao, tmp_path, {"tool": "write_file", "args": {"path": "a.py", "content": "x = 3\n"}})
 
@@ -742,8 +754,50 @@ def test_o_diff_mostra_o_que_mudou_em_relacao_ao_original(tmp_path):
 
     assert diferenca_dos_originais(execucao, tmp_path) == ""   # ainda não mudou nada
 
+    marcar_como_lidos(execucao, tmp_path)
     executar_acao(execucao, tmp_path, {"tool": "write_file", "args": {"path": "a.py", "content": "def f():\n    return 100.1\n"}})
     diff = diferenca_dos_originais(execucao, tmp_path)
 
     assert "-    return 110.0" in diff and "+    return 100.1" in diff
     assert "a.py (original)" in diff
+
+
+# --- ler antes de sobrescrever ---
+
+def test_sobrescrever_arquivo_existente_sem_te_lo_lido_e_recusado(tmp_path):
+    from minicode.agent.fases import executar_acao
+    execucao, mensagens = preparar_implementacao(tmp_path)
+    (tmp_path / "servico.py").write_text("class Servico:\n    def criar_usuario(self):\n        pass\n", encoding="utf-8")
+
+    ok, texto = executar_acao(execucao, tmp_path, {"tool": "write_file", "args": {"path": "servico.py", "content": "class Servico:\n    pass\n"}})
+
+    assert ok is False and "read_file" in texto and "servico.py" in texto
+    assert "criar_usuario" in (tmp_path / "servico.py").read_text(encoding="utf-8")   # nada foi apagado
+
+
+def test_depois_de_ler_o_arquivo_pode_sobrescreve_lo(tmp_path):
+    from minicode.agent.fases import executar_acao
+    execucao, mensagens = preparar_implementacao(tmp_path)
+    (tmp_path / "servico.py").write_text("x = 1\n", encoding="utf-8")
+
+    executar_acao(execucao, tmp_path, {"tool": "read_file", "args": {"path": "servico.py"}})
+    ok, texto = executar_acao(execucao, tmp_path, {"tool": "write_file", "args": {"path": "servico.py", "content": "x = 2\n"}})
+
+    assert ok is True
+
+
+def test_arquivo_que_o_proprio_agente_criou_nao_precisa_ser_relido(tmp_path):
+    from minicode.agent.fases import executar_acao
+    execucao, mensagens = preparar_implementacao(tmp_path)
+
+    executar_acao(execucao, tmp_path, {"tool": "create_file", "args": {"path": "novo.py", "content": "x = 1\n"}})
+    ok, texto = executar_acao(execucao, tmp_path, {"tool": "write_file", "args": {"path": "novo.py", "content": "x = 2\n"}})
+
+    assert ok is True
+
+
+def test_arquivo_novo_nao_exige_leitura(tmp_path):
+    from minicode.agent.fases import executar_acao
+    execucao, mensagens = preparar_implementacao(tmp_path)
+    ok, texto = executar_acao(execucao, tmp_path, {"tool": "write_file", "args": {"path": "outro.py", "content": "x = 1\n"}})
+    assert ok is True

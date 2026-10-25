@@ -20,7 +20,7 @@ from minicode.spec.prompts import (
     mensagens_recomeco, mensagens_spec,
 )
 from minicode.tools.files import read_file
-from minicode.tools.testes import nomes_dos_testes_que_falharam, run_tests
+from minicode.tools.testes import arquivos_dos_testes_que_falharam, nomes_dos_testes_que_falharam, run_tests
 from minicode.tracing import tela
 from minicode.tracing.depuracao import depuracao_ligada, depurar, iniciar_depuracao, instantaneo  # DEBUG
 from minicode.tracing.registro import (
@@ -248,6 +248,19 @@ def diagnosticar_falha(execucao, chat, raiz, saida, repetiu):
     if veredito is None:
         return None
 
+    # Hierarquia de confiança: um teste que já existia no projeto é o oráculo confiável e nunca é o
+    # culpado. Se ele falha, o código do agente quebrou comportamento existente (ex.: sobrescreveu um
+    # arquivo e perdeu métodos), mesmo que o diagnóstico da LLM culpe o teste.
+    antigos = [a for a in arquivos_dos_testes_que_falharam(saida) if a in execucao.arquivos_protegidos]
+    if antigos and veredito["classificacao"] != CODE_BUG:
+        veredito = dict(
+            veredito, classificacao=CODE_BUG,
+            evidencias=(f"(definido pelo programa: o teste que falhou, {antigos[0]}, já existia no projeto e é o "
+                        "oráculo confiável; o código quebrou comportamento existente) " + veredito["evidencias"]),
+            proxima_acao=("restaure o comportamento que o teste existente espera: veja no diff contra o original "
+                          "o que você removeu ou renomeou, e mantenha o que já existia"))
+        registrar_evento(raiz, {"tipo": "diagnostico_corrigido_pelo_programa", "teste": antigos[0]})
+
     # Escalonamento: o teste foi reescrito e a falha voltou idêntica. Reescrever o teste de novo
     # não adianta; a origem está uma etapa acima, no plano de testes de que ele deriva.
     if repetiu and veredito["classificacao"] == TEST_BUG and execucao.plano_de_testes:
@@ -340,6 +353,7 @@ def montar_mensagens_do_reparo(execucao, raiz, mensagens, saida, repetiu, motivo
         mensagens = mensagens_recomeco(
             execucao.tarefa, execucao.spec, execucao.plano, arquivos, saida, repetiu, motivo, codigo_aprovado,
             veredito, execucao.restricao_escrita, removidos, texto_do_plano_de_testes(execucao), mudancas)
+        execucao.arquivos_vistos = set(execucao.arquivos_alterados)   # o "estado atual" mostra esses arquivos
         registrar_evento(raiz, {"tipo": "contexto_reiniciado"})
         como, texto = "contexto reiniciado", mensagens[1]["content"]
     else:
@@ -360,6 +374,7 @@ def implementar_e_reparar(execucao, chat, raiz):
     falhas_vistas = set()   # assinaturas das falhas já vistas nesta execução
     ultimo_veredito = None  # o diagnóstico mais recente (o das tentativas já gastas)
     tela.etapa("implementacao", "Implementação")
+    execucao.arquivos_vistos = set()   # as leituras da spec e do plano eram outras conversas
 
     while True:
         if not rodar_fase_implementacao(execucao, chat, mensagens, raiz):

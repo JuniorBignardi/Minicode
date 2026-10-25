@@ -2,7 +2,7 @@ import json
 import time
 
 from minicode.agent.escrita import (
-    ESCRITAS, conteudo_atual, desescapar_conteudo, guardar_original, recusar_escrita,
+    ESCRITAS, caminho_relativo, conteudo_atual, desescapar_conteudo, guardar_original, recusar_escrita,
 )
 from minicode.agent.estados import FAILED, FERRAMENTAS_POR_ESTADO, VERIFYING, TransicaoInvalida
 from minicode.llm.esquema import esquema_acao, formato_da_resposta
@@ -118,6 +118,9 @@ def executar_acao(execucao, raiz, acao):
 
     if nome in ESCRITAS and ok:
         execucao.registrar_escrita(args["path"])
+        execucao.arquivos_vistos.add(caminho_relativo(raiz, args))   # quem grava o arquivo sabe o que ele contém
+    elif nome == "read_file" and ok:
+        execucao.arquivos_vistos.add(caminho_relativo(raiz, args))
 
     depurar(execucao, raiz, "ferramenta", ferramenta=nome, args=args, ok=ok, resultado=texto,  # DEBUG
             reparado=bool(acao.get("reparado")))  # DEBUG

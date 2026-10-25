@@ -697,8 +697,8 @@ def test_diagnostico_unknown_nao_restringe_nada(tmp_path):
 
 
 def test_diagnostico_que_nao_resolveu_nao_prende_o_reparo_seguinte(tmp_path):
-    # 1º diagnóstico: TEST_BUG. O reparo não muda o resultado dos testes (repetiu).
-    # No 2º diagnóstico (também TEST_BUG), a restrição é levantada para o código poder mudar.
+    # O teste que falha já existia no projeto: o programa corrige o diagnóstico para CODE_BUG (só o código
+    # muda). Se o reparo não mudou o resultado (repetiu), a restrição é levantada no reparo seguinte.
     (tmp_path / "tests").mkdir()
     (tmp_path / "tests" / "test_fat.py").write_text(TESTES, encoding="utf-8")   # teste que já existia: protegido
     chat, historicos = chat_scriptado(
@@ -715,7 +715,7 @@ def test_diagnostico_que_nao_resolveu_nao_prende_o_reparo_seguinte(tmp_path):
 
     assert execucao.estado == DONE
     restricoes = [e["restricao"] for e in eventos_do_tipo(tmp_path, "restricao_do_reparo")]
-    assert restricoes == ["testes", None]
+    assert restricoes == ["codigo", None]
 
 
 def test_diagnostico_desligado_vai_direto_para_o_reparo(tmp_path):
@@ -892,3 +892,31 @@ def test_o_programa_nao_descarta_teste_que_ja_existia(tmp_path):
 
     assert execucao.estado == FAILED
     assert execucao.testes_descartados == []
+
+
+def test_teste_que_ja_existia_nunca_e_o_culpado(tmp_path):
+    # o diagnóstico da LLM culpa o teste do projeto, mas ele é o oráculo confiável: o programa o corrige
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_fat.py").write_text(TESTES, encoding="utf-8")
+    chat, historicos = chat_scriptado(
+        [SPEC, PLANO,
+         escrever("fat.py", FATORIAL_ERRADO),
+         acao("finish"),                        # o teste do projeto falha
+         escrever("fat.py", FATORIAL_CERTO),    # só o código pode mudar
+         acao("finish")],
+        {"diagnostico": [diagnostico("TEST_BUG")]},
+    )
+
+    execucao = rodar_agente("crie fatorial", tmp_path, chat)
+
+    assert execucao.estado == DONE
+    assert eventos_do_tipo(tmp_path, "diagnostico_corrigido_pelo_programa")
+    assert eventos_do_tipo(tmp_path, "reparo")[0]["culpado"] == "CODE_BUG"
+    ultimo = [ms for papel, ms in historicos if papel == "agente"][-1]
+    assert any("já existia no projeto" in m["content"] for m in ultimo)
+
+
+def test_arquivos_dos_testes_que_falharam_le_o_resumo_do_pytest():
+    from minicode.tools.testes import arquivos_dos_testes_que_falharam
+    saida = "FAILED tests/test_original.py::test_criar - AttributeError\nFAILED tests\\test_b.py::test_x - assert"
+    assert arquivos_dos_testes_que_falharam(saida) == ["tests/test_original.py", "tests/test_b.py"]

@@ -31,6 +31,14 @@ def conteudo_a_gravar(args):
     return args["content"]
 
 
+def caminho_relativo(raiz, args):
+    # o caminho do arquivo relativo ao projeto, com "/" (None se os argumentos forem inválidos)
+    alvo = caminho_do_arquivo(raiz, args)
+    if alvo is None:
+        return None
+    return alvo.relative_to(Path(raiz).resolve()).as_posix()
+
+
 def conteudo_atual(raiz, args):
     # o que o arquivo tem agora (None se ele ainda não existe)
     alvo = caminho_do_arquivo(raiz, args)
@@ -120,6 +128,14 @@ def deixa_python_invalido(raiz, args):
     return None if problema_no_python(antes) else problema
 
 
+def sobrescreve_sem_ter_lido(execucao, raiz, args):
+    # Ler antes de sobrescrever (como o Claude Code): quem grava um arquivo inteiro sem tê-lo visto
+    # inventa o conteúdo e apaga o que já existia. Vale só para arquivos que já existem.
+    if conteudo_atual(raiz, args) is None:
+        return False
+    return caminho_relativo(raiz, args) not in execucao.arquivos_vistos
+
+
 def testes_perdidos(execucao, raiz, args):
     # Sobrescrever um arquivo de teste não pode apagar testes que estavam nele. A exceção são
     # os testes que acabaram de falhar: esses podem ser reescritos ou retirados.
@@ -170,6 +186,13 @@ def recusar_escrita(execucao, raiz, args):
         return ("restrição do diagnóstico", {"tipo": "escrita_restrita", "path": caminho, "restricao": execucao.restricao_escrita},
                 f"diagnóstico {classificacao}: só {lado}",
                 f"ERRO: segundo o diagnóstico ({classificacao}), nesta tentativa só é permitido alterar {lado}. {caminho} não pode ser alterado agora.")
+
+    if sobrescreve_sem_ter_lido(execucao, raiz, args):
+        return ("arquivo não lido", {"tipo": "escrita_sem_leitura", "path": caminho},
+                "o arquivo existe e você ainda não o leu",
+                f"ERRO: {caminho} já existe e você ainda não o leu nesta conversa, então {caminho} NÃO foi gravado. "
+                f"Leia-o primeiro com read_file (path: {caminho}) e depois grave o conteúdo completo, mantendo "
+                "o que já existia nele e que o pedido não manda mudar.")
 
     problema = deixa_python_invalido(raiz, args)
     if problema:
