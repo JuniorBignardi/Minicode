@@ -52,7 +52,17 @@ Só o orquestrador chama `avancar()`; as transições e gates ficam todos em `ag
 
 ## 3. Os passos do orquestrador
 
-`agent/orquestrador.py` é uma sequência de passos pequenos. Cada um devolve `False` se a execução já falhou:
+O orquestrador é uma sequência de passos pequenos, dividida em módulos coesos (regra do projeto: nenhum arquivo de código passa de 400 linhas, garantida por `tests/test_estrutura.py`):
+
+| Módulo | Passos |
+|---|---|
+| `agent/orquestrador.py` | `rodar_agente` (a sequência) e `implementar_e_reparar` (o laço central) |
+| `agent/planejamento.py` | `fazer_spec`, `fazer_plano`, `fazer_plano_de_testes` |
+| `agent/verificacao.py` | `verificar`, `revisar`, `veto_valido` |
+| `agent/reparo.py` | `diagnosticar_falha`, `corrigir_plano_de_testes`, `descartar_testes_que_continuam_falhando`, `montar_mensagens_do_reparo` |
+| `agent/controle.py` | `avancar` (único que muda o estado), `finalizar` |
+
+Cada passo devolve `False` se a execução já falhou:
 
 ```
 fazer_spec ─▶ fazer_plano ─▶ fazer_plano_de_testes ─▶ implementar_e_reparar ─▶ finalizar

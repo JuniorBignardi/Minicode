@@ -98,7 +98,11 @@ Comandos: `/ajuda`, `/spec` (última especificação), `/plano` (plano e plano d
 | Módulo (`src/minicode/`) | Responsabilidade |
 |---|---|
 | `agent/estados.py` | `Execucao`, tabela de transições e **hard gates** do estado |
-| `agent/orquestrador.py` | os passos do fluxo (spec → plano → plano de testes → implementar → verificar → diagnosticar → reparar) |
+| `agent/orquestrador.py` | a sequência do fluxo e o laço central (implementar → verificar → diagnosticar → reparar) |
+| `agent/planejamento.py` | spec, plano e plano de testes |
+| `agent/verificacao.py` | revisão do código, pytest e revisão dos testes, com o orçamento de veto |
+| `agent/reparo.py` | diagnóstico, correção do plano, descarte final de testes e mensagens do reparo |
+| `agent/controle.py` | base: mudar o estado (`avancar`), encerrar e funções comuns |
 | `agent/fases.py` | laço de conversa com a LLM, execução de ações, fases de documento e de implementação |
 | `agent/escrita.py` | **hard gates de escrita** (teste protegido, restrição do diagnóstico, Python válido, não perder testes) |
 | `agent/revisoes.py` | chamadas "juiz": revisões, plano de testes e diagnóstico |
@@ -170,14 +174,14 @@ Regras **impostas pelo código**, não pedidas no prompt:
 | Ferramentas por estado (menor privilégio) | `estados.py` + schema | a ação fora do estado é impossível de gerar |
 | Testes que já existiam não podem ser sobrescritos | `escrita.py` | proteção do oráculo |
 | **Ler antes de sobrescrever:** gravar um arquivo que já existe exige tê-lo lido na conversa atual da implementação | `escrita.py` | evita reescrever "de memória" e apagar código existente (como o Claude Code) |
-| Um teste que já existia **nunca é o culpado** de uma falha: o diagnóstico é corrigido para `CODE_BUG` | `orquestrador.py` | o oráculo confiável manda; a regressão é do código |
+| Um teste que já existia **nunca é o culpado** de uma falha: o diagnóstico é corrigido para `CODE_BUG` | `reparo.py` | o oráculo confiável manda; a regressão é do código |
 | Depois do diagnóstico, o reparo só altera o lado apontado (testes **ou** código) | `escrita.py` | evita "consertar" o lado errado |
 | Python precisa compilar e não ter código inalcançável | `escrita.py` | escrita recusada antes de gravar |
 | Sobrescrever um arquivo de teste não pode apagar testes | `escrita.py` | evita perder cobertura |
 | O teste que falhou precisa **mudar** para ser regravado | `escrita.py` | acaba com a regravação idêntica |
 | Limite de iterações (40), de leituras nas fases de documento (4) e recusa de chamada repetida | `estados.py`/`fases.py` | impede laços |
-| Cada critério só pode ser reprovado uma vez por um juiz LLM | `orquestrador.py` | um juiz é opinião, não oráculo; os testes decidem |
-| Fim das tentativas com o diagnóstico apontando o teste: os testes **escritos pelo modelo** que continuam falhando são descartados e tudo é verificado de novo | `orquestrador.py` | testes que já existiam são o oráculo confiável; os do modelo, não. O `DONE` continua exigindo testes passando |
+| Cada critério só pode ser reprovado uma vez por um juiz LLM | `verificacao.py` | um juiz é opinião, não oráculo; os testes decidem |
+| Fim das tentativas com o diagnóstico apontando o teste: os testes **escritos pelo modelo** que continuam falhando são descartados e tudo é verificado de novo | `reparo.py` | testes que já existiam são o oráculo confiável; os do modelo, não. O `DONE` continua exigindo testes passando |
 
 ## 7. Repair loop
 
@@ -253,6 +257,17 @@ Evolução do sistema nesse conjunto (uma execução por linha, exceto onde indi
 | + ler antes de sobrescrever, teste do projeto nunca é o culpado, descarte final de testes | **90 %** |
 
 A melhora de 67 % (média das três execuções anteriores) para 90 % é consistente com os mecanismos adicionados: o `remover usuário`, que falhava por reescrever arquivos às cegas, passou sem nenhum reparo, e o `arredondar_moeda` e o `validar_senha`, que travavam por testes errados, também fecharam. Mesmo assim é **uma execução**, e as tarefas foram usadas para desenvolver o agente, então o número é otimista.
+
+### Repetição depois da refatoração do orquestrador
+
+Depois de dividir o orquestrador em módulos (sem mudar comportamento), os dois conjuntos foram rodados de novo para conferir que não houve regressão:
+
+| Conjunto | Execução final | Repetição | Média das duas |
+|---|---|---|---|
+| Difícil (10) | 90 % (9/10) | 80 % (8/10) | 85 % |
+| Fácil (15) | 87 % (13/15) | 93 % (14/15) | 90 % |
+
+Na repetição: difícil com FirstAttempt de 40 % e 20,7 chamadas por tarefa; fácil com FirstAttempt de 53 % e 17,9 chamadas por tarefa. Nenhuma execução terminou com erro de programa (traceback). A queda de FirstAttempt no conjunto fácil (73 % para 53 %) é de 3 tarefas e está dentro da variação entre execuções, mas não dá para garantir que seja só isso com uma execução por conjunto.
 
 Uma segunda execução com uma checagem de tipo no plano de testes (descrita abaixo, em "O que não funcionou") deu 60 %, e a checagem foi descartada. A variação entre 90 % e 60 % entre duas execuções quase iguais é uma medida direta do ruído desse conjunto de 10 tarefas.
 
