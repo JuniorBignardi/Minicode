@@ -15,6 +15,14 @@ VARIAVEIS_PERMITIDAS = [
 ]
 
 
+def ambiente_restrito():
+    # só as variáveis de ambiente permitidas; o Python lê e escreve em UTF-8
+    ambiente = {nome: valor for nome, valor in os.environ.items() if nome in VARIAVEIS_PERMITIDAS}
+    ambiente["PYTHONUTF8"] = "1"
+    ambiente["PYTHONIOENCODING"] = "utf-8"
+    return ambiente
+
+
 def nomes_dos_testes_que_falharam(saida):
     # Nomes das funções de teste que falharam, lidos dos títulos "____ test_x ____" do pytest.
     nomes = []
@@ -40,9 +48,7 @@ def run_tests(raiz, todos=False):
     # Por padrão para no primeiro teste que falha (-x); com todos=True roda todos e lista todas as falhas.
     # A saída do pytest é lida como UTF-8. Sem isso, no Windows ela era decodificada como
     # cp1252 e os acentos chegavam à LLM corrompidos ("maçã" virava "maÃ§Ã£").
-    ambiente = {nome: valor for nome, valor in os.environ.items() if nome in VARIAVEIS_PERMITIDAS}
-    ambiente["PYTHONUTF8"] = "1"
-    ambiente["PYTHONIOENCODING"] = "utf-8"
+    ambiente = ambiente_restrito()
 
     try:
         resultado = subprocess.run(

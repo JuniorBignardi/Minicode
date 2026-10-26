@@ -1,4 +1,5 @@
 from minicode.tools.busca import search_code
+from minicode.tools.comandos import run_command
 from minicode.tools.files import create_file, list_files, read_file, write_file
 from minicode.tools.git import git_diff
 from minicode.tools.testes import run_tests
@@ -12,6 +13,7 @@ FERRAMENTAS = {
     "create_file": create_file,
     "write_file": write_file,
     "run_tests": run_tests,
+    "run_command": run_command,
 }
 
 # nomes dos argumentos de cada ferramenta (todos texto); o "finish" não tem argumentos
@@ -23,5 +25,6 @@ PARAMETROS = {
     "create_file": ["path", "content"],
     "write_file": ["path", "content"],
     "run_tests": [],
+    "run_command": ["comando"],
     "finish": [],
 }

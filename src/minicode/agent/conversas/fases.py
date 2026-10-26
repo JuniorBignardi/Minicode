@@ -1,6 +1,7 @@
 import json
 import time
 
+from minicode.agent.gates.comandos import executar_comando
 from minicode.agent.gates.escrita import (
     ESCRITAS, caminho_relativo, conteudo_atual, desescapar_conteudo, guardar_original, recusar_escrita,
 )
@@ -111,7 +112,10 @@ def executar_acao(execucao, raiz, acao):
         antes = conteudo_atual(raiz, args)
 
     try:
-        ok, texto = FERRAMENTAS[nome](raiz, **args)
+        if nome == "run_command":
+            ok, texto = executar_comando(raiz, args)
+        else:
+            ok, texto = FERRAMENTAS[nome](raiz, **args)
     except TypeError:
         # a LLM mandou argumentos com nomes errados ou faltando
         ok, texto = False, f"ERRO: argumentos inválidos para {nome}"

@@ -146,6 +146,7 @@ A LLM só enxerga as ferramentas permitidas no estado atual (o `enum` do schema 
 | `read_file` | leitura e implementação | lê um arquivo (cortado a 5 000 caracteres) |
 | `search_code` | leitura e implementação | procura um trecho no projeto e devolve `arquivo:linha: trecho` |
 | `git_diff` | implementação | mostra o que mudou desde o último commit |
+| `run_command` | implementação | executa um comando no projeto e devolve a saída. Passa pelo **validador de comandos**; não grava arquivos (o que gravar é desfeito) |
 | `create_file` | implementação | cria um arquivo **novo** (recusa se ele já existe) |
 | `write_file` | implementação | sobrescreve um arquivo existente com o conteúdo completo |
 | `finish` | implementação | pseudo-ferramenta: encerra a implementação (o gate decide se vale) |
@@ -208,9 +209,11 @@ Quando a verificação falha, o erro volta ao modelo **com contexto**:
 ## 8. Segurança
 
 - **Sandbox de caminhos** (`safety/caminhos.py`): todo caminho é resolvido e recusado se sair do projeto (`..`, links).
-- **A LLM não executa comandos.** As únicas execuções de processo são `pytest` (rodado pelo programa, com tempo limite) e `git diff` (argumentos fixos). Princípio do menor privilégio: o dano possível é a união das ferramentas de escrita, que são só `create_file` e `write_file` dentro do projeto.
+- **Todo comando da LLM passa pelo validador.** A LLM só executa comandos com `run_command`, e só no estado IMPLEMENTING. As outras execuções de processo são `pytest` (rodado pelo programa, com tempo limite) e `git diff` (argumentos fixos).
 - **Segredos:** o `pytest` executa código escrito pelo modelo, por isso recebe apenas variáveis de ambiente de uma lista de permitidas; `MINICODE_API_KEY` não chega a ele.
-- **Validador de comandos** (`safety/comandos.py`): bloqueia `sudo`, `shutdown`, `reboot`, `poweroff`, `halt`, `mkfs`, `dd`, `format` e `rm -r` em alvos perigosos. Está implementado e testado, mas **não há ferramenta que execute comandos escolhidos pela LLM**; ele fica pronto para uma futura `run_command`.
+- **Validador de comandos** (`safety/comandos.py`): bloqueia `sudo`, `shutdown`, `reboot`, `poweroff`, `halt`, `mkfs`, `dd`, `format` e `rm -r` em alvos perigosos. Também recusa argumentos que apontam para fora do projeto (`/etc/passwd`, `..`, `~`, `C:\...`). O `run_command` chama o validador antes de executar: comando recusado volta à LLM como erro e nada roda.
+- **`run_command` não grava arquivos.** Sem shell (sem pipes nem `>`), com tempo limite de 30 s e as mesmas variáveis de ambiente restritas do `pytest`. O programa fotografa o projeto antes do comando e **desfaz** o que ele alterar (evento `comando_desfeito`): assim um `python -c "open(...).write(...)"` não contorna os gates de escrita (teste protegido, ler antes de sobrescrever etc.).
+- **Limitação:** o validador é uma lista de proibições, não uma análise do código. `python -c` roda código arbitrário dentro do projeto, no próprio computador e sem container; ele não impede, por exemplo, que o código leia arquivos fora do projeto ou use a rede.
 - **Limites:** iterações, leituras, tentativas de reparo, tempo do `pytest` (120 s) e do cliente (60 s).
 - **Limitação conhecida:** o `pytest` roda código gerado no próprio computador, sem container.
 

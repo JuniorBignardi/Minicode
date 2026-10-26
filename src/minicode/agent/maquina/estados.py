@@ -29,7 +29,7 @@ TRANSICOES = {
 
 # Quais ferramentas a LLM pode pedir em cada estado.
 LEITURA = ["list_files", "read_file", "search_code"]
-ESCRITA = ["git_diff", "create_file", "write_file", "finish"]
+ESCRITA = ["git_diff", "run_command", "create_file", "write_file", "finish"]
 
 FERRAMENTAS_POR_ESTADO = {
     RECEIVED: LEITURA,
