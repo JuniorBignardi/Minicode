@@ -23,7 +23,8 @@ source .venv/bin/activate          # Linux/macOS
 
 pip install -e ".[dev]"
 
-cp .env.example .env               # preencha os valores; o .env nunca vai para o git
+cp .env.example .env               # Windows (PowerShell): copy .env.example .env
+                                   # preencha os valores; o .env nunca vai para o git
 pytest                             # 300+ testes, sem chamar a LLM
 ```
 

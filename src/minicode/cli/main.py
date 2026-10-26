@@ -4,12 +4,26 @@ import sys
 import time
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from minicode.agent.escrita import diferenca_dos_originais
 from minicode.agent.estados import DONE
 from minicode.agent.orquestrador import rodar_agente
 from minicode.tracing import tela
 
+VARIAVEIS_DE_AMBIENTE = ("MINICODE_API_BASE", "MINICODE_API_KEY", "MINICODE_MODEL")
 SAIR = ("/sair", "sair", "exit", "quit")
+
+
+def conferir_ambiente():
+    # O .env é lido aqui, antes de importar o cliente da LLM. Uma variável vazia (o .env.example copiado
+    # e ainda não preenchido) conta como ausente: o usuário recebe uma mensagem clara, não um traceback.
+    load_dotenv()
+    faltando = [nome for nome in VARIAVEIS_DE_AMBIENTE if not os.environ.get(nome)]
+    if faltando:
+        print(f"Faltam variáveis de ambiente: {', '.join(faltando)}.")
+        print("Preencha o arquivo .env (copie o .env.example) ou defina-as no terminal.")
+        sys.exit(2)
 
 
 def mostrar_arquivo(raiz, nome):
@@ -59,17 +73,15 @@ def rodar_tarefa(tarefa, raiz, chat):
 
 
 def main():
-    # importado aqui para que importar este módulo não exija o .env
-    try:
-        from minicode.llm.client import chat
-    except KeyError as faltando:
-        print(f"Variável de ambiente ausente: {faltando}. Veja o .env.example.")
-        sys.exit(2)
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")   # os símbolos e os acentos da tela precisam de UTF-8
+
+    # o cliente é importado depois da conferência, para que importar este módulo não exija o .env
+    conferir_ambiente()
+    from minicode.llm.client import chat
 
     # o projeto é a pasta onde o comando foi executado
     raiz = Path.cwd()
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")   # os símbolos da tela precisam de UTF-8
 
     # minicode "pedido": roda uma tarefa e sai (código 0 se concluiu)
     if len(sys.argv) > 1:
