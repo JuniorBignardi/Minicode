@@ -9,7 +9,6 @@ FERRAMENTAS_LEITURA = """Ferramentas disponíveis:
 
 FERRAMENTAS_ESCRITA = FERRAMENTAS_LEITURA + """
 - git_diff: mostra o que mudou no projeto desde o último commit (precisa ser um repositório git). args: {}
-- run_command: executa um comando no diretório do projeto e mostra a saída (por exemplo python -c "from modulo import f; print(f(2))"). Serve para experimentar o código, não para gravar arquivos: o que o comando gravar é desfeito. args: {"comando": "python -c \"print(1)\""}
 - create_file: cria um arquivo NOVO (recusa se ele já existir). args: {"path": "caminho/relativo.py", "content": "texto do arquivo"}
 - write_file: sobrescreve um arquivo que já existe, com o conteúdo COMPLETO. args: {"path": "caminho/relativo.py", "content": "texto do arquivo"}
 - finish: avisa que a implementação terminou. args: {}"""
@@ -115,7 +114,7 @@ INTRODUCAO_DA_REVISAO = {
 }
 
 
-AVISO_SEM_COMANDOS = "Importante: o sistema roda os testes sozinho depois do finish, então você não precisa rodá-los. run_command serve só para experimentar o código e não grava arquivos. As ferramentas são list_files, read_file, search_code, git_diff, run_command, create_file, write_file e finish."
+AVISO_SEM_COMANDOS = "Importante: o sistema roda os testes sozinho depois do finish. Você NÃO pode executar testes nem comandos. As únicas ferramentas são list_files, read_file, search_code, git_diff, create_file, write_file e finish."
 
 
 DICA_CODIGO_APROVADO = """ATENÇÃO: um revisor independente comparou o código com a especificação e APROVOU o código. Portanto o erro tem grande chance de estar nos TESTES que você escreveu: corrija o teste (o valor esperado ou a forma de verificar) em vez de alterar o código.

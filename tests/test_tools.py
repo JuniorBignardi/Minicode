@@ -70,7 +70,7 @@ def test_run_tests_sem_nenhum_teste_nao_conta_como_passou(tmp_path):
 
 
 def test_registry_tem_as_ferramentas():
-    assert set(FERRAMENTAS) == {"list_files", "read_file", "search_code", "git_diff", "create_file", "write_file", "run_tests", "run_command"}
+    assert set(FERRAMENTAS) == {"list_files", "read_file", "search_code", "git_diff", "create_file", "write_file", "run_tests"}
 
 
 def test_nomes_dos_testes_que_falharam():

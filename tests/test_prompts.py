@@ -72,7 +72,7 @@ def test_mensagens_de_recomeco_tem_so_o_essencial():
 def test_mensagem_de_reparo_diz_que_o_sistema_roda_os_testes():
     texto = mensagem_reparo("erro")
     assert "O sistema roda os testes sozinho" in texto or "o sistema roda os testes sozinho" in texto
-    assert "não precisa rodá-los" in texto and "run_command" in texto
+    assert "NÃO pode executar testes" in texto
 
 
 def test_regra_geral_de_testar_so_o_que_a_spec_define():

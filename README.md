@@ -146,7 +146,6 @@ A LLM só enxerga as ferramentas permitidas no estado atual (o `enum` do schema 
 | `read_file` | leitura e implementação | lê um arquivo (cortado a 5 000 caracteres) |
 | `search_code` | leitura e implementação | procura um trecho no projeto e devolve `arquivo:linha: trecho` |
 | `git_diff` | implementação | mostra o que mudou desde o último commit |
-| `run_command` | implementação | executa um comando no projeto e devolve a saída. Passa pelo **validador de comandos**; não grava arquivos (o que gravar é desfeito) |
 | `create_file` | implementação | cria um arquivo **novo** (recusa se ele já existe) |
 | `write_file` | implementação | sobrescreve um arquivo existente com o conteúdo completo |
 | `finish` | implementação | pseudo-ferramenta: encerra a implementação (o gate decide se vale) |
@@ -209,11 +208,9 @@ Quando a verificação falha, o erro volta ao modelo **com contexto**:
 ## 8. Segurança
 
 - **Sandbox de caminhos** (`safety/caminhos.py`): todo caminho é resolvido e recusado se sair do projeto (`..`, links).
-- **Todo comando da LLM passa pelo validador.** A LLM só executa comandos com `run_command`, e só no estado IMPLEMENTING. As outras execuções de processo são `pytest` (rodado pelo programa, com tempo limite) e `git diff` (argumentos fixos).
+- **A LLM não executa comandos.** As únicas execuções de processo são `pytest` (rodado pelo programa, com tempo limite) e `git diff` (argumentos fixos). Princípio do menor privilégio: o dano possível é a união das ferramentas de escrita, que são só `create_file` e `write_file` dentro do projeto.
 - **Segredos:** o `pytest` executa código escrito pelo modelo, por isso recebe apenas variáveis de ambiente de uma lista de permitidas; `MINICODE_API_KEY` não chega a ele.
-- **Validador de comandos** (`safety/comandos.py`): bloqueia `sudo`, `shutdown`, `reboot`, `poweroff`, `halt`, `mkfs`, `dd`, `format` e `rm -r` em alvos perigosos. Também recusa argumentos que apontam para fora do projeto (`/etc/passwd`, `..`, `~`, `C:\...`). O `run_command` chama o validador antes de executar: comando recusado volta à LLM como erro e nada roda.
-- **`run_command` não grava arquivos.** Sem shell (sem pipes nem `>`), com tempo limite de 30 s e as mesmas variáveis de ambiente restritas do `pytest`. O programa fotografa o projeto antes do comando e **desfaz** o que ele alterar (evento `comando_desfeito`): assim um `python -c "open(...).write(...)"` não contorna os gates de escrita (teste protegido, ler antes de sobrescrever etc.).
-- **Limitação:** o validador é uma lista de proibições, não uma análise do código. `python -c` roda código arbitrário dentro do projeto, no próprio computador e sem container; ele não impede, por exemplo, que o código leia arquivos fora do projeto ou use a rede.
+- **Validador de comandos** (`safety/comandos.py`): bloqueia `sudo`, `shutdown`, `reboot`, `poweroff`, `halt`, `mkfs`, `dd`, `format` e `rm -r` em alvos perigosos. Está implementado e testado, mas **não há ferramenta que execute comandos escolhidos pela LLM**; ele fica pronto para uma futura `run_command`.
 - **Limites:** iterações, leituras, tentativas de reparo, tempo do `pytest` (120 s) e do cliente (60 s).
 - **Limitação conhecida:** o `pytest` roda código gerado no próprio computador, sem container.
 
@@ -305,6 +302,7 @@ Resultados negativos fazem parte da resposta experimental:
 | `replace_text` (opcional e obrigatório no reparo) | o 14B erra o trecho `old`; 0/3 no início da rodada com ele obrigatório |
 | Temperatura crescente no reparo | 30/30 regravações idênticas a 0,3, 0,5 e 0,7; a temperatura não destrava a cópia |
 | Varredura de temperatura | sem diferença distinguível do ruído (n pequeno); ficou o valor fixo por fase |
+| `run_command` (comando da LLM validado por `safety/comandos.py`, com gate que desfaz gravações) | funcionou e recusou caminhos fora do projeto, mas na demo de correção de bug o 14B o usou 5 a 8 vezes por execução, quase sempre para rodar o `pytest` que o sistema já roda, e consumiu as 40 iterações (1 de 2 execuções falhou; a versão anterior também falhou 1 de 3, amostra pequena). Retirado; o validador continua testado e disponível |
 | Modelo de 7B | ~48 % no conjunto difícil; descartado |
 | Prompts com exemplos de tarefas | induziam viés; foram trocados por regras gerais |
 | Checagem de tipo no plano de testes (o juiz identifica o tipo que o critério pede e o que o caso descreve, e o programa compara) | detectou o erro do `contar linhas`, mas a tarefa terminou incorreta do mesmo jeito; gerou falso positivo (o número `5` descrito em prosa contou como texto); a execução seguinte deu 60 % contra 90 %. Descartada |

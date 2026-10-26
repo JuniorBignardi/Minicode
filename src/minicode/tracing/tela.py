@@ -126,7 +126,7 @@ def pensamento(texto):
 
 def leitura(nome, args, ok, texto):
     args = args if isinstance(args, dict) else {}
-    alvo = args.get("path") or args.get("padrao") or args.get("comando") or args.get("diretorio") or ""
+    alvo = args.get("path") or args.get("padrao") or args.get("diretorio") or ""
     if not ok:
         escrever(cor(f"  ▸ {nome} {alvo}  ✗ {resumir(texto, 80)}", "vermelho"))
         return

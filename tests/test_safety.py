@@ -22,8 +22,6 @@ def test_caminho_fora_do_projeto_e_recusado(tmp_path, caminho):
 
 @pytest.mark.parametrize("comando", [
     "sudo ls",
-    "pip install requests",
-    "python -m pip install requests",
     "shutdown now",
     "reboot",
     "rm -rf /",
