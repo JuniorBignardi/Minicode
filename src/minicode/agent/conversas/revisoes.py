@@ -1,6 +1,6 @@
 import json
 
-from minicode.agent.fases import cortar_registro, pedir_resposta
+from minicode.agent.conversas.fases import cortar_registro, pedir_resposta
 from minicode.llm.esquema import formato_da_resposta
 from minicode.spec.diagnostico import (
     ESQUEMA_DIAGNOSTICO, PLAN_BUG, UNKNOWN, ancorar_na_spec, interpretar_diagnostico, mensagens_diagnostico,

@@ -1,10 +1,10 @@
 # Do pedido até o plano de testes: spec, plano e plano de testes.
 # Cada passo devolve False se a execução falhou (o estado já está em FAILED).
 
-from minicode.agent.controle import avancar
-from minicode.agent.estados import PLANNED, SPECIFIED, TEST_PLANNED
-from minicode.agent.fases import rodar_fase_documento
-from minicode.agent.revisoes import rodar_plano_de_testes, rodar_revisao_spec
+from minicode.agent.maquina.controle import avancar
+from minicode.agent.maquina.estados import PLANNED, SPECIFIED, TEST_PLANNED
+from minicode.agent.conversas.fases import rodar_fase_documento
+from minicode.agent.conversas.revisoes import rodar_plano_de_testes, rodar_revisao_spec
 from minicode.spec.documentos import validar_plano, validar_spec
 from minicode.spec.plano_de_testes import plano_de_testes_em_texto
 from minicode.spec.prompts import mensagem_correcao_da_spec, mensagens_plano, mensagens_spec

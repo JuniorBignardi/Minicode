@@ -1,12 +1,12 @@
 # Diagnóstico e reparo: quem errou (código, teste ou plano), o que fazer e como montar a nova conversa.
 
-from minicode.agent.controle import avancar, estado_atual_dos_arquivos
-from minicode.agent.escrita import diferenca_dos_originais, remover_testes_que_falharam
-from minicode.agent.estados import DIAGNOSING, DONE, FAILED, TEST_PLANNED
-from minicode.agent.fases import cortar_registro
-from minicode.agent.planejamento import guardar_plano_de_testes
-from minicode.agent.revisoes import rodar_diagnostico, rodar_plano_de_testes, texto_do_plano_de_testes
-from minicode.agent.verificacao import revisar
+from minicode.agent.maquina.controle import avancar, estado_atual_dos_arquivos
+from minicode.agent.gates.escrita import diferenca_dos_originais, remover_testes_que_falharam
+from minicode.agent.maquina.estados import DIAGNOSING, DONE, FAILED, TEST_PLANNED
+from minicode.agent.conversas.fases import cortar_registro
+from minicode.agent.etapas.planejamento import guardar_plano_de_testes
+from minicode.agent.conversas.revisoes import rodar_diagnostico, rodar_plano_de_testes, texto_do_plano_de_testes
+from minicode.agent.etapas.verificacao import revisar
 from minicode.spec.diagnostico import CODE_BUG, ENVIRONMENT_ERROR, PLAN_BUG, TEST_BUG, UNKNOWN
 from minicode.spec.prompts import bloco_das_mudancas, mensagem_reparo, mensagens_recomeco
 from minicode.tools.testes import arquivos_dos_testes_que_falharam, nomes_dos_testes_que_falharam, run_tests

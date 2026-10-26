@@ -1,7 +1,7 @@
 import json
 
-from minicode.agent.estados import Execucao, FAILED, FERRAMENTAS_POR_ESTADO, IMPLEMENTING, PLANNED, SPECIFIED, VERIFYING
-from minicode.agent.fases import (
+from minicode.agent.maquina.estados import Execucao, FAILED, FERRAMENTAS_POR_ESTADO, IMPLEMENTING, PLANNED, SPECIFIED, VERIFYING
+from minicode.agent.conversas.fases import (
     MAX_LEITURAS, TEMPERATURA_POR_FASE, rodar_fase_documento, rodar_fase_implementacao,
 )
 from minicode.tracing.registro import iniciar_registro
@@ -467,7 +467,7 @@ ARQUIVO_DE_TESTE = "def test_a():\n    assert 1 == 2\n\n\ndef test_b():\n    ass
 
 
 def preparar_reparo_de_teste(tmp_path, restricao="testes"):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao, mensagens = preparar_implementacao(tmp_path)
     (tmp_path / "tests").mkdir()
     (tmp_path / "tests" / "test_x.py").write_text(ARQUIVO_DE_TESTE, encoding="utf-8")
@@ -519,7 +519,7 @@ def test_sem_restricao_de_teste_a_regra_nao_se_aplica(tmp_path):
 
 
 def test_arquivo_novo_nao_e_afetado_pela_regra(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao, mensagens = preparar_implementacao(tmp_path)
     execucao.restricao_escrita = "testes"
     execucao.testes_que_falharam = ["test_a"]
@@ -543,7 +543,7 @@ def test_o_modelo_que_insiste_no_mesmo_teste_deixa_de_ser_recusado_depois_de_dua
 # --- temperatura por fase ---
 
 def test_cada_chamada_usa_a_temperatura_fixa_da_fase(tmp_path):
-    from minicode.agent.fases import TEMPERATURA_POR_FASE, pedir_resposta
+    from minicode.agent.conversas.fases import TEMPERATURA_POR_FASE, pedir_resposta
     execucao, mensagens = preparar_implementacao(tmp_path)
     execucao.tentativas = 3   # o reparo não muda a temperatura
     usadas = []
@@ -561,7 +561,7 @@ def test_cada_chamada_usa_a_temperatura_fixa_da_fase(tmp_path):
 # --- remoção dos testes que falharam (diagnóstico TEST_BUG) ---
 
 def test_remover_testes_que_falharam_apaga_so_a_funcao_que_falhou(tmp_path):
-    from minicode.agent.escrita import remover_testes_que_falharam
+    from minicode.agent.gates.escrita import remover_testes_que_falharam
     execucao, mensagens = preparar_implementacao(tmp_path)
     (tmp_path / "tests").mkdir()
     (tmp_path / "tests" / "test_x.py").write_text(
@@ -579,7 +579,7 @@ def test_remover_testes_que_falharam_apaga_so_a_funcao_que_falhou(tmp_path):
 
 
 def test_remover_nao_toca_em_codigo_nem_em_teste_protegido(tmp_path):
-    from minicode.agent.escrita import remover_testes_que_falharam
+    from minicode.agent.gates.escrita import remover_testes_que_falharam
     execucao, mensagens = preparar_implementacao(tmp_path)
     (tmp_path / "tests").mkdir()
     (tmp_path / "tests" / "test_x.py").write_text("def test_b():\n    assert 1 == 2\n", encoding="utf-8")
@@ -595,7 +595,7 @@ def test_remover_nao_toca_em_codigo_nem_em_teste_protegido(tmp_path):
 # --- escrita que deixaria o Python inválido ---
 
 def test_problema_no_python_acha_sintaxe_e_codigo_inalcancavel():
-    from minicode.agent.escrita import problema_no_python
+    from minicode.agent.gates.escrita import problema_no_python
     assert problema_no_python("x = 1\n") is None
     assert "sintaxe" in problema_no_python("def f(:\n    pass\n")
     assert "inalcançável" in problema_no_python("def f():\n    return 1\n    x = 2\n")
@@ -603,7 +603,7 @@ def test_problema_no_python_acha_sintaxe_e_codigo_inalcancavel():
 
 
 def test_write_file_com_sintaxe_quebrada_e_recusado(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao, mensagens = preparar_implementacao(tmp_path)
 
     ok, texto = executar_acao(execucao, tmp_path, {"tool": "write_file", "args": {"path": "a.py", "content": "def f(:\n"}})
@@ -613,7 +613,7 @@ def test_write_file_com_sintaxe_quebrada_e_recusado(tmp_path):
 
 
 def test_arquivos_que_nao_sao_python_nao_sao_checados(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao, mensagens = preparar_implementacao(tmp_path)
 
     ok, texto = executar_acao(execucao, tmp_path, {"tool": "write_file", "args": {"path": "a.txt", "content": "def f(:\n"}})
@@ -622,7 +622,7 @@ def test_arquivos_que_nao_sao_python_nao_sao_checados(tmp_path):
 
 
 def test_write_file_que_deixa_codigo_depois_do_return_e_recusado(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao, mensagens = preparar_implementacao(tmp_path)
     conteudo = "def f():\n    return 1\n    x = 2\n"
 
@@ -633,7 +633,7 @@ def test_write_file_que_deixa_codigo_depois_do_return_e_recusado(tmp_path):
 
 
 def test_arquivo_ja_quebrado_pode_ser_regravado_em_etapas(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao, mensagens = preparar_implementacao(tmp_path)
     (tmp_path / "a.py").write_text("def f(:\n    x = (\n", encoding="utf-8")
     conteudo = "def f():\n    x = (\n"   # continua quebrado: a escrita não cria um problema novo
@@ -657,7 +657,7 @@ def preparar_arquivo_de_teste(tmp_path):
 
 
 def test_sobrescrever_arquivo_de_teste_apagando_um_teste_e_recusado(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao = preparar_arquivo_de_teste(tmp_path)
     conteudo = "def test_a():\n    assert 1 == 1\n"
 
@@ -669,7 +669,7 @@ def test_sobrescrever_arquivo_de_teste_apagando_um_teste_e_recusado(tmp_path):
 
 
 def test_sobrescrever_mantendo_ou_acrescentando_testes_e_aceito(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao = preparar_arquivo_de_teste(tmp_path)
     conteudo = DOIS_TESTES + "\n\ndef test_c():\n    assert 3 == 3\n"
 
@@ -680,7 +680,7 @@ def test_sobrescrever_mantendo_ou_acrescentando_testes_e_aceito(tmp_path):
 
 
 def test_o_teste_que_acabou_de_falhar_pode_ser_retirado(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao = preparar_arquivo_de_teste(tmp_path)
     execucao.testes_que_falharam = ["test_b"]
     conteudo = "def test_a():\n    assert 1 == 1\n"
@@ -692,7 +692,7 @@ def test_o_teste_que_acabou_de_falhar_pode_ser_retirado(tmp_path):
 
 
 def test_create_file_passa_pelos_mesmos_gates_de_escrita(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao, mensagens = preparar_implementacao(tmp_path)
 
     ok, texto = executar_acao(execucao, tmp_path, {"tool": "create_file", "args": {"path": "a.py", "content": "def f(:\n"}})
@@ -705,7 +705,7 @@ def test_create_file_passa_pelos_mesmos_gates_de_escrita(tmp_path):
 # --- search_code e git_diff no agente ---
 
 def test_search_code_esta_disponivel_para_ler_e_git_diff_so_na_implementacao():
-    from minicode.agent.estados import RECEIVED
+    from minicode.agent.maquina.estados import RECEIVED
     assert "search_code" in FERRAMENTAS_POR_ESTADO[RECEIVED]
     assert "search_code" in FERRAMENTAS_POR_ESTADO[IMPLEMENTING]
     assert "git_diff" not in FERRAMENTAS_POR_ESTADO[RECEIVED]
@@ -713,7 +713,7 @@ def test_search_code_esta_disponivel_para_ler_e_git_diff_so_na_implementacao():
 
 
 def test_o_agente_executa_search_code(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao, mensagens = preparar_implementacao(tmp_path)
     (tmp_path / "a.py").write_text("def soma(a, b):\n    return a + b\n", encoding="utf-8")
 
@@ -725,7 +725,7 @@ def test_o_agente_executa_search_code(tmp_path):
 # --- o conteúdo original dos arquivos é guardado antes da primeira alteração ---
 
 def test_a_primeira_escrita_guarda_o_conteudo_original(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao, mensagens = preparar_implementacao(tmp_path)
     (tmp_path / "a.py").write_text("x = 1\n", encoding="utf-8")
 
@@ -738,7 +738,7 @@ def test_a_primeira_escrita_guarda_o_conteudo_original(tmp_path):
 
 
 def test_arquivo_novo_nao_tem_original(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao, mensagens = preparar_implementacao(tmp_path)
 
     executar_acao(execucao, tmp_path, {"tool": "create_file", "args": {"path": "novo.py", "content": "x = 1\n"}})
@@ -747,8 +747,8 @@ def test_arquivo_novo_nao_tem_original(tmp_path):
 
 
 def test_o_diff_mostra_o_que_mudou_em_relacao_ao_original(tmp_path):
-    from minicode.agent.escrita import diferenca_dos_originais
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.gates.escrita import diferenca_dos_originais
+    from minicode.agent.conversas.fases import executar_acao
     execucao, mensagens = preparar_implementacao(tmp_path)
     (tmp_path / "a.py").write_text("def f():\n    return 110.0\n", encoding="utf-8")
 
@@ -765,7 +765,7 @@ def test_o_diff_mostra_o_que_mudou_em_relacao_ao_original(tmp_path):
 # --- ler antes de sobrescrever ---
 
 def test_sobrescrever_arquivo_existente_sem_te_lo_lido_e_recusado(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao, mensagens = preparar_implementacao(tmp_path)
     (tmp_path / "servico.py").write_text("class Servico:\n    def criar_usuario(self):\n        pass\n", encoding="utf-8")
 
@@ -776,7 +776,7 @@ def test_sobrescrever_arquivo_existente_sem_te_lo_lido_e_recusado(tmp_path):
 
 
 def test_depois_de_ler_o_arquivo_pode_sobrescreve_lo(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao, mensagens = preparar_implementacao(tmp_path)
     (tmp_path / "servico.py").write_text("x = 1\n", encoding="utf-8")
 
@@ -787,7 +787,7 @@ def test_depois_de_ler_o_arquivo_pode_sobrescreve_lo(tmp_path):
 
 
 def test_arquivo_que_o_proprio_agente_criou_nao_precisa_ser_relido(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao, mensagens = preparar_implementacao(tmp_path)
 
     executar_acao(execucao, tmp_path, {"tool": "create_file", "args": {"path": "novo.py", "content": "x = 1\n"}})
@@ -797,7 +797,7 @@ def test_arquivo_que_o_proprio_agente_criou_nao_precisa_ser_relido(tmp_path):
 
 
 def test_arquivo_novo_nao_exige_leitura(tmp_path):
-    from minicode.agent.fases import executar_acao
+    from minicode.agent.conversas.fases import executar_acao
     execucao, mensagens = preparar_implementacao(tmp_path)
     ok, texto = executar_acao(execucao, tmp_path, {"tool": "write_file", "args": {"path": "outro.py", "content": "x = 1\n"}})
     assert ok is True

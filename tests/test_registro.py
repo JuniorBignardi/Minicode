@@ -1,6 +1,6 @@
 import json
 
-from minicode.agent.estados import Execucao
+from minicode.agent.maquina.estados import Execucao
 from minicode.tracing.registro import (
     iniciar_registro, registrar_evento, salvar_documento, salvar_estado,
 )

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from minicode.agent.estados import (
+from minicode.agent.maquina.estados import (
     Execucao, TransicaoInvalida,
     SPECIFIED, PLANNED, IMPLEMENTING, VERIFYING, DIAGNOSING, REPAIRING, FAILED,
 )

@@ -48,7 +48,7 @@ Estados: `RECEIVED`, `SPECIFIED`, `PLANNED`, `TEST_PLANNED`, `IMPLEMENTING`, `VE
 | `REPAIRING` | `IMPLEMENTING` | |
 | qualquer | `FAILED` | limite de iterações ou de tentativas, ou erro da LLM |
 
-Só o orquestrador chama `avancar()`; as transições e gates ficam todos em `agent/estados.py`, num lugar só, o que facilita testá-los (`tests/test_estados.py`).
+Só o orquestrador chama `avancar()`; as transições e gates ficam todos em `agent/maquina/estados.py`, num lugar só, o que facilita testá-los (`tests/test_estados.py`).
 
 ## 3. Os passos do orquestrador
 
@@ -57,10 +57,10 @@ O orquestrador é uma sequência de passos pequenos, dividida em módulos coesos
 | Módulo | Passos |
 |---|---|
 | `agent/orquestrador.py` | `rodar_agente` (a sequência) e `implementar_e_reparar` (o laço central) |
-| `agent/planejamento.py` | `fazer_spec`, `fazer_plano`, `fazer_plano_de_testes` |
-| `agent/verificacao.py` | `verificar`, `revisar`, `veto_valido` |
-| `agent/reparo.py` | `diagnosticar_falha`, `corrigir_plano_de_testes`, `descartar_testes_que_continuam_falhando`, `montar_mensagens_do_reparo` |
-| `agent/controle.py` | `avancar` (único que muda o estado), `finalizar` |
+| `agent/etapas/planejamento.py` | `fazer_spec`, `fazer_plano`, `fazer_plano_de_testes` |
+| `agent/etapas/verificacao.py` | `verificar`, `revisar`, `veto_valido` |
+| `agent/etapas/reparo.py` | `diagnosticar_falha`, `corrigir_plano_de_testes`, `descartar_testes_que_continuam_falhando`, `montar_mensagens_do_reparo` |
+| `agent/maquina/controle.py` | `avancar` (único que muda o estado), `finalizar` |
 
 Cada passo devolve `False` se a execução já falhou:
 

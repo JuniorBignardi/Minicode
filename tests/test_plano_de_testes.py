@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from minicode.agent.estados import Execucao, IMPLEMENTING, PLANNED, SPECIFIED, TEST_PLANNED, TransicaoInvalida
-from minicode.agent.revisoes import MAX_CORRECOES_DO_PLANO_DE_TESTES, rodar_plano_de_testes
+from minicode.agent.maquina.estados import Execucao, IMPLEMENTING, PLANNED, SPECIFIED, TEST_PLANNED, TransicaoInvalida
+from minicode.agent.conversas.revisoes import MAX_CORRECOES_DO_PLANO_DE_TESTES, rodar_plano_de_testes
 from minicode.spec.plano_de_testes import (
     criterios_da_spec, criterios_sem_caso, esquema_plano_de_testes, interpretar_plano_de_testes,
     interpretar_revisao_plano_de_testes, plano_de_testes_em_texto, validar_plano_de_testes,
@@ -240,13 +240,13 @@ def test_revisao_antiga_sem_o_campo_sobre_o_codigo_continua_valida():
 
 
 def test_a_volta_para_test_planned_exige_um_diagnostico():
-    from minicode.agent.estados import DIAGNOSING, REPAIRING
+    from minicode.agent.maquina.estados import DIAGNOSING, REPAIRING
     execucao = execucao_planejada()
     execucao.plano_de_testes = [caso("a")]
     execucao.mudar_para(TEST_PLANNED)
     execucao.mudar_para(IMPLEMENTING)
     execucao.arquivos_alterados = ["a.py"]
-    execucao.mudar_para(__import__("minicode.agent.estados", fromlist=["VERIFYING"]).VERIFYING)
+    execucao.mudar_para(__import__("minicode.agent.maquina.estados", fromlist=["VERIFYING"]).VERIFYING)
     execucao.mudar_para(DIAGNOSING)
 
     with pytest.raises(TransicaoInvalida):

@@ -1,10 +1,10 @@
 import json
 import time
 
-from minicode.agent.escrita import (
+from minicode.agent.gates.escrita import (
     ESCRITAS, caminho_relativo, conteudo_atual, desescapar_conteudo, guardar_original, recusar_escrita,
 )
-from minicode.agent.estados import FAILED, FERRAMENTAS_POR_ESTADO, VERIFYING, TransicaoInvalida
+from minicode.agent.maquina.estados import FAILED, FERRAMENTAS_POR_ESTADO, VERIFYING, TransicaoInvalida
 from minicode.llm.esquema import esquema_acao, formato_da_resposta
 from minicode.llm.parser import explicar_erro_json, extrair_acoes
 from minicode.spec.documentos import extrair_documento

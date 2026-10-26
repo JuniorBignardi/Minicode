@@ -1,4 +1,4 @@
-from minicode.agent.estados import FERRAMENTAS_POR_ESTADO, IMPLEMENTING, RECEIVED
+from minicode.agent.maquina.estados import FERRAMENTAS_POR_ESTADO, IMPLEMENTING, RECEIVED
 from minicode.llm.esquema import esquema_acao, formato_da_resposta
 from minicode.tools.registry import PARAMETROS
 

@@ -6,8 +6,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from minicode.agent.escrita import diferenca_dos_originais
-from minicode.agent.estados import DONE
+from minicode.agent.gates.escrita import diferenca_dos_originais
+from minicode.agent.maquina.estados import DONE
 from minicode.agent.orquestrador import rodar_agente
 from minicode.tracing import tela
 

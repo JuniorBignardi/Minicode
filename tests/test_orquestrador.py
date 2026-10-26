@@ -1,6 +1,6 @@
 import json
 
-from minicode.agent.estados import DONE, FAILED
+from minicode.agent.maquina.estados import DONE, FAILED
 from minicode.agent.orquestrador import rodar_agente
 
 REVISAO_APROVADA = json.dumps({"criterios": [{"criterio": "x", "atendido": True, "motivo": "ok"}]})
@@ -818,7 +818,7 @@ def test_plan_bug_corrige_o_plano_antes_de_reescrever_o_teste(tmp_path):
 
 
 def test_plan_bug_restringe_o_reparo_aos_testes(tmp_path):
-    from minicode.agent.estados import Execucao
+    from minicode.agent.maquina.estados import Execucao
     execucao = Execucao("t")
     execucao.registrar_diagnostico({"classificacao": "PLAN_BUG"})
     assert execucao.restricao_escrita == "testes"

@@ -4,8 +4,8 @@
 
 from pathlib import Path
 
-from minicode.agent.controle import avancar, finalizar, normalizar
-from minicode.agent.estados import (
+from minicode.agent.maquina.controle import avancar, finalizar, normalizar
+from minicode.agent.maquina.estados import (
     DONE,
     Execucao,
     IMPLEMENTING,
@@ -13,9 +13,9 @@ from minicode.agent.estados import (
     TransicaoInvalida,
     VERIFYING,
 )
-from minicode.agent.fases import rodar_fase_implementacao
-from minicode.agent.planejamento import fazer_plano, fazer_plano_de_testes, fazer_spec
-from minicode.agent.reparo import (
+from minicode.agent.conversas.fases import rodar_fase_implementacao
+from minicode.agent.etapas.planejamento import fazer_plano, fazer_plano_de_testes, fazer_spec
+from minicode.agent.etapas.reparo import (
     acabaram_as_tentativas,
     anunciar_reparo,
     corrigir_plano_de_testes,
@@ -23,8 +23,8 @@ from minicode.agent.reparo import (
     montar_mensagens_do_reparo,
     remover_testes_errados,
 )
-from minicode.agent.revisoes import texto_do_plano_de_testes
-from minicode.agent.verificacao import verificar
+from minicode.agent.conversas.revisoes import texto_do_plano_de_testes
+from minicode.agent.etapas.verificacao import verificar
 from minicode.safety.protegidos import listar_testes
 from minicode.spec.diagnostico import PLAN_BUG
 from minicode.spec.documentos import arquivos_citados

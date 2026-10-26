@@ -1,6 +1,6 @@
 import pytest
 
-from minicode.agent.estados import (
+from minicode.agent.maquina.estados import (
     Execucao, TransicaoInvalida,
     RECEIVED, SPECIFIED, PLANNED, IMPLEMENTING, VERIFYING, REPAIRING, DONE, FAILED,
 )

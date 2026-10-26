@@ -98,15 +98,15 @@ Comandos: `/ajuda`, `/spec` (última especificação), `/plano` (plano e plano d
 
 | Módulo (`src/minicode/`) | Responsabilidade |
 |---|---|
-| `agent/estados.py` | `Execucao`, tabela de transições e **hard gates** do estado |
+| `agent/maquina/estados.py` | `Execucao`, tabela de transições e **hard gates** do estado |
 | `agent/orquestrador.py` | a sequência do fluxo e o laço central (implementar → verificar → diagnosticar → reparar) |
-| `agent/planejamento.py` | spec, plano e plano de testes |
-| `agent/verificacao.py` | revisão do código, pytest e revisão dos testes, com o orçamento de veto |
-| `agent/reparo.py` | diagnóstico, correção do plano, descarte final de testes e mensagens do reparo |
-| `agent/controle.py` | base: mudar o estado (`avancar`), encerrar e funções comuns |
-| `agent/fases.py` | laço de conversa com a LLM, execução de ações, fases de documento e de implementação |
-| `agent/escrita.py` | **hard gates de escrita** (teste protegido, restrição do diagnóstico, Python válido, não perder testes) |
-| `agent/revisoes.py` | chamadas "juiz": revisões, plano de testes e diagnóstico |
+| `agent/etapas/planejamento.py` | spec, plano e plano de testes |
+| `agent/etapas/verificacao.py` | revisão do código, pytest e revisão dos testes, com o orçamento de veto |
+| `agent/etapas/reparo.py` | diagnóstico, correção do plano, descarte final de testes e mensagens do reparo |
+| `agent/maquina/controle.py` | base: mudar o estado (`avancar`), encerrar e funções comuns |
+| `agent/conversas/fases.py` | laço de conversa com a LLM, execução de ações, fases de documento e de implementação |
+| `agent/gates/escrita.py` | **hard gates de escrita** (teste protegido, restrição do diagnóstico, Python válido, não perder testes) |
+| `agent/conversas/revisoes.py` | chamadas "juiz": revisões, plano de testes e diagnóstico |
 | `llm/` | cliente do endpoint, parser de ações, JSON Schema (`response_format`) |
 | `spec/` | prompts, validação de documentos, esquemas e prompts das revisões/diagnóstico/plano de testes |
 | `tools/` | ferramentas: arquivos, busca, `git diff`, execução do pytest |

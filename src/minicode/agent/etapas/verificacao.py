@@ -1,9 +1,9 @@
 # O estado VERIFYING: revisão do código, pytest e revisão dos testes, com o orçamento de veto.
 
-from minicode.agent.controle import estado_atual_dos_arquivos
-from minicode.agent.estados import MAX_VETOS_POR_CRITERIO
-from minicode.agent.fases import cortar_registro
-from minicode.agent.revisoes import rodar_revisao
+from minicode.agent.maquina.controle import estado_atual_dos_arquivos
+from minicode.agent.maquina.estados import MAX_VETOS_POR_CRITERIO
+from minicode.agent.conversas.fases import cortar_registro
+from minicode.agent.conversas.revisoes import rodar_revisao
 from minicode.spec.revisao import assinatura_da_reprovacao
 from minicode.tools.testes import run_tests
 from minicode.tracing import tela
