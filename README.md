@@ -1,5 +1,11 @@
 # MiniCode
 
+## 🎥 Vídeo de demonstração
+
+Confira o vídeo abaixo para conhecer o funcionamento do projeto.
+
+[![Assistir à demonstração do projeto](https://img.youtube.com/vi/zHvtjiy3MgQ/maxresdefault.jpg)](https://youtu.be/zHvtjiy3MgQ)
+
 Agente de programação simplificado, inspirado no Claude Code, desenvolvido como trabalho da disciplina de Redes Neurais Artificiais (Parte 1). Dado um pedido em linguagem natural, o MiniCode lê o projeto, escreve uma **especificação** e um **plano**, define os **testes** antes do código, implementa, roda os testes e **repara** os erros, tudo sob controle de um harness programático.
 
 A ideia central do trabalho: **a LLM propõe, o programa decide.** O modelo escolhe ações em JSON; quem valida, executa, restringe e registra é o código.
