@@ -30,8 +30,10 @@ import gerar_v2
 import oraculo
 from temas_v4 import TEMAS_V4 as _V4
 
+# os temas novos: os de temas_v4.py mais os de temas_v5.json
 TEMAS_V4 = list(_V4) + [t for t in json.loads((AQUI / 'temas_v5.json').read_text(encoding='utf-8'))]
 
+# o dataset já existente (registros_*.jsonl), usado para não repetir nomes e para contar o uso dos temas
 DATASET_ATUAL = RAIZ / "experiments" / "execucoes" / "dataset_v2"
 
 REGRAS_EXTRAS = """
@@ -44,13 +46,22 @@ REGRAS DE QUALIDADE (muito importantes; exercícios que as violam são descartad
 - Todo o texto (pedido, spec e plano) em português. Cada passo do plano em português.
 - Não crie exercícios de: datas e dia da semana, dígito verificador (Luhn, CPF, CNPJ), signos, notas musicais, conversão de bases numéricas, MIME, CSV."""
 
+# o prompt do v2 mais as regras de qualidade aprendidas na revisão
 SISTEMA = gerar_v2.SISTEMA + REGRAS_EXTRAS
 
-IMPLEMENTACAO = re.compile(r"\b(internamente|biblioteca|reutiliza|determin[ií]stic|usa (a )?fun[cç][aã]o|n[aã]o utiliza|sem usar|estado interno|complexidade|in-place)\b", re.I)
+# expressões regulares dos filtros extras
+# - IMPLEMENTACAO: palavras de um critério que fala da implementação em vez do comportamento
+# - INGLES / PORTUGUES: palavras comuns de cada língua, para detectar texto em inglês
+IMPLEMENTACAO = re.compile(
+    r"\b(internamente|biblioteca|reutiliza|determin[ií]stic|usa (a )?fun[cç][aã]o|n[aã]o utiliza"
+    r"|sem usar|estado interno|complexidade|in-place)\b",
+    re.I,
+)
 INGLES = re.compile(r"\b(the|and|with|for|to|of|is|if|that|each|when|in)\b", re.I)
 PORTUGUES = re.compile(r"\b(o|a|de|para|com|que|se|um|uma|e|do|da|em|os|as)\b", re.I)
 
 
+# todos os registros já existentes (treino, validação e teste)
 def dataset_atual():
     registros = []
     for conjunto in ("treino", "validacao", "teste"):
@@ -60,6 +71,7 @@ def dataset_atual():
     return registros
 
 
+# nomes de arquivo e de definições (def/class) das referências, para não repetir nenhum
 def nomes_do_dataset(registros):
     nomes = set()
     for r in registros:
@@ -68,6 +80,8 @@ def nomes_do_dataset(registros):
     return nomes
 
 
+# Controle de temas sem reposição: os já usados em lotes anteriores ficam em temas_usados.json e os sorteados
+# nesta execução ficam em _SORTEADOS (a trava impede duas threads de sortear o mesmo tema).
 ARQUIVO_TEMAS = AQUI / "temas_usados.json"
 _TRAVA = threading.Lock()
 _SORTEADOS = set()
@@ -77,6 +91,7 @@ def temas_usados():
     return set(json.loads(ARQUIVO_TEMAS.read_text(encoding="utf-8"))) if ARQUIVO_TEMAS.exists() else set()
 
 
+# acrescenta os temas deste lote ao arquivo de temas usados
 def registrar_temas(registros):
     novos = temas_usados() | {r["tema"] for r in registros}
     ARQUIVO_TEMAS.write_text(json.dumps(sorted(novos), ensure_ascii=False, indent=1), encoding="utf-8")
@@ -95,16 +110,33 @@ def pedir_exercicio(professor, rng, usados=()):
         tema = rng.choice(temas)
         _SORTEADOS.add(tema)
     estilo, regras = rng.choice(gerar_tarefas.ESTILOS), rng.choice([1, 2, 2, 3, 3, 4])
-    proibidos = sorted(gerar_tarefas.nomes_do_benchmark() | set(rng.sample(sorted(nomes_do_dataset(conhecidos)), 80)) | set(usados))
-    usuario = f"Tema: {tema}. Estilo: {estilo}. Regras distintas no comportamento: {regras}. Não use nenhum destes nomes de arquivo, função ou classe: {', '.join(proibidos)}."
-    texto = professor([{"role": "system", "content": SISTEMA}, {"role": "user", "content": usuario}], temperature=0.8, max_tokens=4500)
+    # nomes proibidos: os do benchmark, uma amostra de 80 do dataset e os já criados neste lote
+    proibidos = sorted(
+        gerar_tarefas.nomes_do_benchmark()
+        | set(rng.sample(sorted(nomes_do_dataset(conhecidos)), 80))
+        | set(usados)
+    )
+    usuario = (
+        f"Tema: {tema}. Estilo: {estilo}. Regras distintas no comportamento: {regras}. "
+        f"Não use nenhum destes nomes de arquivo, função ou classe: {', '.join(proibidos)}."
+    )
+    texto = professor(
+        [{"role": "system", "content": SISTEMA}, {"role": "user", "content": usuario}],
+        temperature=0.8,
+        max_tokens=4500,
+    )
     return gerar_v2.extrair_exercicio(texto), {"tema": tema, "estilo": estilo, "regras": regras}
 
 
-TEMAS_PROIBIDOS = re.compile(r"cpf|cnpj|data|hor[aá]rio|dia da semana|semana|signo|nota musical|notas e frequ|frequ[eê]ncia|base num|luhn|d[ií]gito verificador|mime|csv|resum", re.I)
+TEMAS_PROIBIDOS = re.compile(
+    r"cpf|cnpj|data|hor[aá]rio|dia da semana|semana|signo|nota musical|notas e frequ|frequ[eê]ncia"
+    r"|base num|luhn|d[ií]gito verificador|mime|csv|resum",
+    re.I,
+)
 _NOMES_DO_DATASET = None
 
 
+# os nomes do dataset atual (sem os que começam com "_"), calculados só uma vez
 def nomes_ja_usados():
     global _NOMES_DO_DATASET
     if _NOMES_DO_DATASET is None:
@@ -114,28 +146,47 @@ def nomes_ja_usados():
 
 def filtro_extra(registro):
     # (registro, "") ou (None, motivo)
-    definidos = {n for n in re.findall(r"^(?:def|class) (\w+)", registro["referencia"], re.M) if not n.startswith("_")}
+
+    # nomes de função e classe (públicos) que a referência define; não podem repetir os do dataset
+    definidos = {
+        n for n in re.findall(r"^(?:def|class) (\w+)", registro["referencia"], re.M)
+        if not n.startswith("_")
+    }
     repetidos = definidos & nomes_ja_usados()
     if repetidos or Path(registro["arquivo"]).stem in nomes_ja_usados():
         return None, f"nome já usado no dataset ({', '.join(sorted(repetidos))})"
     if any(re.search(r"\._\w+", c["entrada"]) for c in registro["casos"]):
         return None, "o caso acessa atributo privado"
     # todo método, atributo e função usados nos casos têm de estar nomeados no PEDIDO
-    comuns = {"append", "pop", "items", "keys", "values", "join", "sort", "upper", "lower", "split", "strip", "count", "index", "extend", "copy", "add", "remove", "update", "insert", "get", "format", "isalnum", "isdigit", "real", "imag", "pi", "sqrt"}
+    # métodos e funções da biblioteca padrão que não precisam estar no pedido
+    comuns = {
+        "append", "pop", "items", "keys", "values", "join", "sort", "upper", "lower", "split", "strip", "count",
+        "index", "extend", "copy", "add", "remove", "update", "insert", "get", "format", "isalnum", "isdigit",
+        "real", "imag", "pi", "sqrt",
+    }
     nomes = set()
     for c in registro["casos"]:
+        # tira os textos entre aspas antes de procurar nomes, para não confundir com o conteúdo de strings
         limpa = re.sub(r"'[^']*'|\"[^\"]*\"", "", c["entrada"])
         nomes |= set(re.findall(r"\.(\w+)", limpa)) | {n for n in re.findall(r"(\w+)\(", limpa) if n in definidos}
-    faltam = sorted(n for n in nomes if n not in registro["pedido"] and n not in comuns and not n.startswith("_") and not n.isdigit())
+    faltam = sorted(
+        n for n in nomes
+        if n not in registro["pedido"] and n not in comuns and not n.startswith("_") and not n.isdigit()
+    )
     if faltam:
         return None, f"o pedido não nomeia: {', '.join(faltam[:4])}"
+
+    # critérios sobre a implementação (em vez do comportamento) são descartados
     criterios = gerar_v2.criterios_da_spec(registro["especificacao"])
     if any(IMPLEMENTACAO.search(c) for c in criterios):
         return None, "critério de implementação"
+
+    # texto em inglês: muitas palavras inglesas comuns e mais do que metade das portuguesas
     for campo in ("especificacao", "plano", "pedido"):
         texto = registro[campo]
         if len(INGLES.findall(texto)) >= 6 and len(INGLES.findall(texto)) > 0.5 * len(PORTUGUES.findall(texto)):
             return None, "texto em inglês"
+    # casos com sleep (lento), repr de objeto (o endereço de memória muda) ou esperado enorme
     for c in registro["casos"]:
         if "sleep" in c["entrada"] or "object at 0x" in c["esperado"]:
             return None, "sleep ou repr de objeto"
@@ -144,6 +195,7 @@ def filtro_extra(registro):
     return registro, ""
 
 
+# guarda a validação do v2 e acrescenta os filtros extras do v3 por cima dela
 _validar_v2 = gerar_v2.validar_exercicio
 
 
@@ -168,15 +220,31 @@ def segundo_solucionador(solucionador, registro):
         compile(codigo, registro["arquivo"], "exec")
     except SyntaxError:
         return {"situacao": "codigo_invalido"}
-    saidas, motivo = gerar_tarefas.saidas_da_referencia({"arquivo": registro["arquivo"], "referencia": codigo, "entradas": [c["entrada"] for c in registro["casos"]]})
+
+    # roda o código do solucionador nas mesmas entradas dos casos
+    saidas, motivo = gerar_tarefas.saidas_da_referencia({
+        "arquivo": registro["arquivo"],
+        "referencia": codigo,
+        "entradas": [c["entrada"] for c in registro["casos"]],
+    })
     if saidas is None:
         return {"situacao": "nao_executa", "motivo": motivo}
+
+    # cada divergência com o esperado da referência é um sinal de referência errada ou de pedido ambíguo
     divergencias = []
     for caso, saida in zip(registro["casos"], saidas):
         veredito = oraculo.comparar(saida, caso["esperado"])
         if veredito == "errado":
-            divergencias.append({"entrada": caso["entrada"][:160], "referencia": caso["esperado"][:80], "solucionador": (saida["repr"] if saida["ok"] else saida["excecao"])[:80]})
-    return {"situacao": "ok" if not divergencias else "diverge", "casos": len(registro["casos"]), "divergencias": divergencias}
+            divergencias.append({
+                "entrada": caso["entrada"][:160],
+                "referencia": caso["esperado"][:80],
+                "solucionador": (saida["repr"] if saida["ok"] else saida["excecao"])[:80],
+            })
+    return {
+        "situacao": "ok" if not divergencias else "diverge",
+        "casos": len(registro["casos"]),
+        "divergencias": divergencias,
+    }
 
 
 def main():
@@ -192,14 +260,25 @@ def main():
         import os
         from dotenv import load_dotenv
         load_dotenv(RAIZ / ".env", override=True)
-        professor = Professor(os.environ["QWEN_MODEL"], por_minuto=20, tempo=120, arquivo_de_uso=uso, base=os.environ["QWEN_ENDPOINT"], chave=os.environ["QWEN_KEY"])
+        professor = Professor(
+            os.environ["QWEN_MODEL"],
+            por_minuto=20,
+            tempo=120,
+            arquivo_de_uso=uso,
+            base=os.environ["QWEN_ENDPOINT"],
+            chave=os.environ["QWEN_KEY"],
+        )
     else:
         professor = Professor(gerador, por_minuto=30, tempo=90, arquivo_de_uso=uso)
     solucionador = Professor(resolvedor, por_minuto=30, tempo=90, arquivo_de_uso=uso)
     saida.parent.mkdir(parents=True, exist_ok=True)
+
+    # troca a validação e o pedido do v2 pelos do v3 e reaproveita o laço de geração do v2
     gerar_v2.validar_exercicio = validar_exercicio
     gerar_v2.pedir_exercicio = pedir_exercicio
     registros = gerar_v2.gerar(professor, saida, quantidade, semente, threads, log=lambda m: print(m, flush=True))
+
+    # depois da geração, o segundo solucionador confere cada exercício novo
     atualizados = []
     for r in registros:
         if "solucionador" not in r and not pular_solucionador:

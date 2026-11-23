@@ -26,22 +26,35 @@ sys.path.insert(0, str(AQUI.parents[1] / "src"))
 import oraculo
 from minicode.llm.parser import extrair_acoes
 
-ERROS_DE_ACAO = ("ferramenta_proibida", "acao_repetida", "formato_invalido", "limite_de_leituras", "finish_recusado",
-                 "escrita_protegida", "escrita_restrita", "escrita_sem_leitura", "escrita_invalida", "escrita_perde_testes",
-                 "escrita_sem_mudanca")
+# tipos de evento do rastro do agente que indicam uma ação recusada ou mal formada
+ERROS_DE_ACAO = (
+    "ferramenta_proibida", "acao_repetida", "formato_invalido", "limite_de_leituras", "finish_recusado",
+    "escrita_protegida", "escrita_restrita", "escrita_sem_leitura", "escrita_invalida", "escrita_perde_testes",
+    "escrita_sem_mudanca",
+)
 
 
 def execucoes(base):
+    # uma tupla por execução gravada: (pasta, conjunto, resultado.json, chamadas à LLM, eventos do agente)
     for resultado in sorted(base.glob("*_r*/tarefa_*/resultado.json")):
         pasta = resultado.parent
         r = json.loads(resultado.read_text(encoding="utf-8"))
         conjunto = "facil" if pasta.parent.name.startswith("facil") else "dificil"
-        chamadas = [json.loads(l) for l in (pasta / ".minicode" / "chamadas_llm.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
-        eventos = [json.loads(l) for l in (pasta / ".minicode" / "actions.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+        chamadas = [
+            json.loads(l)
+            for l in (pasta / ".minicode" / "chamadas_llm.jsonl").read_text(encoding="utf-8").splitlines()
+            if l.strip()
+        ]
+        eventos = [
+            json.loads(l)
+            for l in (pasta / ".minicode" / "actions.jsonl").read_text(encoding="utf-8").splitlines()
+            if l.strip()
+        ]
         yield pasta, conjunto, r, chamadas, eventos
 
 
 def final_certo(r):
+    # a execução acabou bem: o agente declarou DONE e o verificador oculto aprovou o código
     return r["estado"] == "DONE" and r["codigo_correto"]
 
 
@@ -66,6 +79,7 @@ def verificar(conjunto, id, arquivos):
 
 def auditar_acoes(todas):
     total = erradas = 0
+    # rodadas_com_erro[grupo] = [execuções com algum erro de ação, execuções do grupo]
     por_tipo, rodadas_com_erro = Counter(), {"errou": [0, 0], "acertou": [0, 0]}
     limite = 0
     for pasta, conjunto, r, chamadas, eventos in todas:
@@ -77,9 +91,12 @@ def auditar_acoes(todas):
         grupo = "acertou" if final_certo(r) else "errou"
         rodadas_com_erro[grupo][0] += bool(problemas or any(not e["ok"] for e in ferramentas))
         rodadas_com_erro[grupo][1] += 1
-        limite += r["iteracoes"] >= 40
-    return {"acoes": total, "com_erro": erradas, "problemas": dict(por_tipo.most_common()), "execucoes_no_limite_de_iteracoes": limite,
-            "execucoes_com_algum_problema": rodadas_com_erro}
+        limite += r["iteracoes"] >= 40   # 40 é o limite de iterações do agente
+    return {
+        "acoes": total, "com_erro": erradas, "problemas": dict(por_tipo.most_common()),
+        "execucoes_no_limite_de_iteracoes": limite,
+        "execucoes_com_algum_problema": rodadas_com_erro,
+    }
 
 
 # --- código: a primeira versão e o reparo ---
@@ -96,6 +113,7 @@ def primeira_versao(chamadas, inicial):
             if acao.get("tool") in ("create_file", "write_file") and isinstance(acao.get("args"), dict):
                 caminho, conteudo = acao["args"].get("path"), acao["args"].get("content")
                 if isinstance(caminho, str) and isinstance(conteudo, str):
+                    # conteúdo com "\n" literal e sem quebras de linha de verdade: desfaz o escape
                     if "\\n" in conteudo and "\n" not in conteudo:
                         conteudo = conteudo.replace("\\n", "\n")
                     arquivos[caminho] = conteudo
@@ -103,6 +121,7 @@ def primeira_versao(chamadas, inicial):
 
 
 def auditar_codigo(todas):
+    # conta "primeira versão -> versão final", cada uma certa ou errada, pelo verificador oculto
     contagem = Counter()
     for pasta, conjunto, r, chamadas, eventos in todas:
         if r["tipo"] == "criar testes":
@@ -117,6 +136,7 @@ def auditar_codigo(todas):
 # --- revisor do código ---
 
 def arquivos_do_prompt(texto):
+    # lê os arquivos que o prompt do revisor mostra, cada um introduzido por uma linha "--- caminho"
     arquivos = {}
     for bloco in texto.split("\n--- ")[1:] if "\n--- " in texto else []:
         caminho, _, conteudo = bloco.partition("\n")
@@ -125,12 +145,18 @@ def arquivos_do_prompt(texto):
 
 
 def auditar_revisor(todas):
+    # matriz[(estado do código, veredito do revisor)] = quantidade
     matriz = Counter()
     for pasta, conjunto, r, chamadas, eventos in todas:
         if r["tipo"] == "criar testes":
             continue
         for chamada in chamadas:
-            if chamada["fase"] != "revisao" or "sobre_o_codigo" not in chamada["mensagens"][0]["content"] or not chamada["resposta"]:
+            # só as revisões do código contra a spec (o prompt de sistema cita "sobre_o_codigo")
+            if (
+                chamada["fase"] != "revisao"
+                or "sobre_o_codigo" not in chamada["mensagens"][0]["content"]
+                or not chamada["resposta"]
+            ):
                 continue
             try:
                 criterios = json.loads(chamada["resposta"])["criterios"]
@@ -138,13 +164,17 @@ def auditar_revisor(todas):
                 continue
             aprovou = all(c.get("atendido") for c in criterios if c.get("sobre_o_codigo", True))
             arquivos = arquivos_do_prompt(chamada["mensagens"][1]["content"].split("Arquivos")[-1])
-            matriz[("codigo certo" if verificar(conjunto, r["id"], arquivos) else "codigo errado", "aprovou" if aprovou else "reprovou")] += 1
+            matriz[(
+                "codigo certo" if verificar(conjunto, r["id"], arquivos) else "codigo errado",
+                "aprovou" if aprovou else "reprovou",
+            )] += 1
     return matriz
 
 
 # --- spec: valor errado nos critérios ---
 
 def auditar_spec(todas):
+    # estimativa mínima: só conta o valor errado da spec que o plano de testes repete
     tinham_exemplos = com_valor_errado = 0
     for pasta, conjunto, r, chamadas, eventos in todas:
         spec = (pasta / ".minicode" / "specification.md").read_text(encoding="utf-8")
@@ -158,8 +188,12 @@ def auditar_spec(todas):
             shutil.rmtree(referencia, ignore_errors=True)
         tinham_exemplos += 1
         # um caso com valor errado cujo valor errado também está escrito na spec, ao lado da entrada
-        com_valor_errado += any(oraculo.comparar(s, c["esperado"]) == "errado" and c["esperado"].strip() in spec and c["entrada"].split("(")[0] in spec
-                                for c, s in zip(casos, saidas))
+        com_valor_errado += any(
+            oraculo.comparar(s, c["esperado"]) == "errado"
+            and c["esperado"].strip() in spec
+            and c["entrada"].split("(")[0] in spec
+            for c, s in zip(casos, saidas)
+        )
     return tinham_exemplos, com_valor_errado
 
 
@@ -169,6 +203,7 @@ def main():
     todas = list(execucoes(base))
     print(f"# Auditoria por função: {len(todas)} execuções do agente com o Qwen 14B\n")
 
+    # --- ação: a ferramenta e os argumentos que o modelo escolheu ---
     a = auditar_acoes(todas)
     print("## Ação (escolha da ferramenta e dos argumentos)")
     print(f"- {a['acoes']} chamadas de ferramenta; {a['com_erro']} deram erro ({porcentagem(a['com_erro'], a['acoes'])})")
@@ -177,6 +212,7 @@ def main():
     for grupo, (n, t) in a["execucoes_com_algum_problema"].items():
         print(f"- entre as que {grupo}: {n}/{t} ({porcentagem(n, t)}) tiveram algum erro de ação")
 
+    # --- código: a primeira versão estava certa? o reparo consertou? o processo estragou código certo? ---
     c = auditar_codigo(todas)
     total = sum(c.values())
     print("\n## Código (primeira versão e reparo), sem as tarefas de criar testes")
@@ -185,21 +221,35 @@ def main():
     certas = c["certo->certo"] + c["certo->errado"]
     print(f"- a primeira versão do código estava certa em {certas}/{total} ({porcentagem(certas, total)})")
     erradas = c["errado->certo"] + c["errado->errado"]
-    print(f"- das que nasceram erradas, o reparo consertou {c['errado->certo']}/{erradas} ({porcentagem(c['errado->certo'], erradas)})")
+    print(
+        f"- das que nasceram erradas, o reparo consertou {c['errado->certo']}/{erradas} "
+        f"({porcentagem(c['errado->certo'], erradas)})"
+    )
     print(f"- código certo estragado pelo processo: {c['certo->errado']}")
 
+    # --- revisor do código: aprova o que está certo e reprova o que está errado? ---
     m = auditar_revisor(todas)
     print("\n## Revisor do código (compara o código com a spec)")
     for (codigo, veredito), n in sorted(m.items()):
         print(f"- {codigo} e o revisor {veredito}: {n}")
     certo_total = m[("codigo certo", "aprovou")] + m[("codigo certo", "reprovou")]
     errado_total = m[("codigo errado", "aprovou")] + m[("codigo errado", "reprovou")]
-    print(f"- reprova código que estava certo: {m[('codigo certo', 'reprovou')]}/{certo_total} ({porcentagem(m[('codigo certo', 'reprovou')], certo_total)})")
-    print(f"- aprova código que estava errado: {m[('codigo errado', 'aprovou')]}/{errado_total} ({porcentagem(m[('codigo errado', 'aprovou')], errado_total)})")
+    print(
+        f"- reprova código que estava certo: {m[('codigo certo', 'reprovou')]}/{certo_total} "
+        f"({porcentagem(m[('codigo certo', 'reprovou')], certo_total)})"
+    )
+    print(
+        f"- aprova código que estava errado: {m[('codigo errado', 'aprovou')]}/{errado_total} "
+        f"({porcentagem(m[('codigo errado', 'aprovou')], errado_total)})"
+    )
 
+    # --- spec: valor errado nos critérios ---
     n, errada = auditar_spec(todas)
     print("\n## Spec")
-    print(f"- {errada} de {n} execuções ({porcentagem(errada, n)}) têm um valor errado escrito na spec que o plano de testes repete (estimativa mínima)")
+    print(
+        f"- {errada} de {n} execuções ({porcentagem(errada, n)}) têm um valor errado escrito na spec "
+        f"que o plano de testes repete (estimativa mínima)"
+    )
 
 
 if __name__ == "__main__":

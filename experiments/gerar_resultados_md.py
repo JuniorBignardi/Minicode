@@ -1,7 +1,10 @@
-"""Gera docs/RESULTADOS.md: todos os resultados da Parte 2 em um lugar só, com os números lidos dos arquivos (nada digitado à mão).
+"""Gera os dois arquivos de resultados da Parte 2, com os números lidos dos arquivos (nada digitado à mão):
+
+  docs/RESULTADOS.md           a versão curta, para ler primeiro (main_curto)
+  docs/RESULTADOS_DETALHADO.md o anexo com análises complementares e auditorias (main)
 
 Uso: python experiments/gerar_resultados_md.py
-Lê experiments/resultados/ (Nível 1, auditorias e, se existir, Nível 2) e escreve docs/RESULTADOS.md.
+Lê experiments/resultados/ (Nível 1, auditorias e, se existir, Nível 2).
 """
 import json
 import sys
@@ -14,11 +17,26 @@ sys.argv = [sys.argv[0], str(R / "nivel1")]   # o analise_nivel1 lê a pasta pel
 sys.path.insert(0, str(AQUI))
 import analise_nivel1 as an
 
-NOMES = {"q15_base_schema": "1,5B base", "q15_base_2exemplos_schema": "1,5B base com 2 exemplos",
-         "q15_ajustado3ep_schema": "**1,5B treinado (3 épocas)**", "q15_ajustadomelhor_schema": "1,5B treinado (melhor ponto)",
-         "q14b_schema": "Qwen-14B"}
-PRINCIPAIS = ["q15_base_schema", "q15_base_2exemplos_schema", "q15_ajustado3ep_schema", "q15_ajustadomelhor_schema", "q14b_schema"]
+# nome de cada modelo nas tabelas (a chave é o prefixo dos arquivos em resultados/nivel1/)
+NOMES = {
+    "q15_base_schema": "1,5B base",
+    "q15_base_2exemplos_schema": "1,5B base com 2 exemplos",
+    "q15_ajustado3ep_schema": "**1,5B treinado (3 épocas)**",
+    "q15_ajustadomelhor_schema": "1,5B treinado (melhor ponto)",
+    "q14b_schema": "Qwen-14B",
+}
+PRINCIPAIS = [
+    "q15_base_schema",
+    "q15_base_2exemplos_schema",
+    "q15_ajustado3ep_schema",
+    "q15_ajustadomelhor_schema",
+    "q14b_schema",
+]
 
+
+# ---------------------------------------------------------------------------------------------
+# Formatação: vírgula decimal (o texto é lido em voz alta no vídeo)
+# ---------------------------------------------------------------------------------------------
 
 def virgula(s):
     return s.replace(".", ",")
@@ -33,19 +51,33 @@ def inteiro(x):
 
 
 def avaliacao(arq):
-    return [json.loads(l) for l in (R / "nivel1" / f"{arq}_avaliacao.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+    # as notas do oráculo, um plano por linha, do arquivo <modelo>_avaliacao.jsonl
+    return [
+        json.loads(l)
+        for l in (R / "nivel1" / f"{arq}_avaliacao.jsonl").read_text(encoding="utf-8").splitlines()
+        if l.strip()
+    ]
 
+
+# ---------------------------------------------------------------------------------------------
+# Tabelas do anexo (cada função devolve o texto de uma tabela em markdown)
+# ---------------------------------------------------------------------------------------------
 
 def tabela_oficial():
+    # métrica oficial: corretos / (corretos + errados), com o IC 95% já calculado no _resumo.json
     L = ["| Modelo | Teste real (25 tarefas) | Teste sintético (80 exercícios) |", "|---|---|---|"]
     for arq in PRINCIPAIS:
         r = json.loads((R / "nivel1" / f"{arq}_resumo.json").read_text(encoding="utf-8"))
-        cel = [f"{pct(r[c]['fracao_correta'])} (IC {100 * r[c]['ic95'][0]:.0f} a {100 * r[c]['ic95'][1]:.0f})" for c in ("real", "sintetico")]
+        cel = [
+            f"{pct(r[c]['fracao_correta'])} (IC {100 * r[c]['ic95'][0]:.0f} a {100 * r[c]['ic95'][1]:.0f})"
+            for c in ("real", "sintetico")
+        ]
         L.append(f"| {NOMES[arq]} | {cel[0]} | {cel[1]} |")
     return "\n".join(L)
 
 
 def tabela_pareada():
+    # diferença entre dois modelos nas MESMAS tarefas, com IC por bootstrap (a conta está em analise_nivel1.py)
     dados = {n: an.carregar(a) for n, a in an.MODELOS.items()}
     L = ["| Comparação | Teste real | Teste sintético |", "|---|---|---|"]
     for x, y in an.COMPARACOES:
@@ -61,6 +93,7 @@ def tabela_pareada():
 
 
 def planos_perfeitos():
+    # métrica "tudo ou nada": o plano só conta se TODOS os casos dele foram corretos
     L = ["| Modelo | Real | Sintético |", "|---|---|---|"]
     for arq in PRINCIPAIS:
         cel = []
@@ -73,10 +106,19 @@ def planos_perfeitos():
 
 
 def nota_auditada():
-    ler = [json.loads(l) for l in (R / "nivel1" / "auditoria_inavaliaveis" / "inavaliaveis_para_ler.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+    # a nota oficial deixa os casos inavaliáveis de fora; aqui entram os que li à mão
+    # (veredito "H" = teste válido que o oráculo não pontua, "M" = teste quebrado pelo próprio modelo)
+    ler = [
+        json.loads(l)
+        for l in (R / "nivel1" / "auditoria_inavaliaveis" / "inavaliaveis_para_ler.jsonl").read_text(encoding="utf-8").splitlines()
+        if l.strip()
+    ]
     ver = json.loads((R / "nivel1" / "auditoria_inavaliaveis" / "inavaliaveis_vereditos.json").read_text(encoding="utf-8"))
     mapa = {"q14b_schema": "14B", "q15_ajustado3ep_schema": "ajustado (3 épocas)", "q15_base_schema": "base"}
-    L = ["| Modelo | Real: oficial → auditada | Sintético: oficial → auditada | Testes que não rodam (erro do modelo) |", "|---|---|---|---|"]
+    L = [
+        "| Modelo | Real: oficial → auditada | Sintético: oficial → auditada | Testes que não rodam (erro do modelo) |",
+        "|---|---|---|---|",
+    ]
     for arq, rot in mapa.items():
         cel, quebrados = [], 0
         for conj in ("real", "sintetico"):
@@ -84,7 +126,8 @@ def nota_auditada():
             for a in avaliacao(arq):
                 if a["conjunto"] == conj:
                     for x in a["casos"]:
-                        c += x["nota"] == "correto"; e += x["nota"] == "errado"
+                        c += x["nota"] == "correto"
+                        e += x["nota"] == "errado"
             h = sum(1 for x in ler if x["modelo"] == rot and x["conjunto"][:4] == conj[:4] and ver[str(x["idx"])] == "H")
             m = sum(1 for x in ler if x["modelo"] == rot and x["conjunto"][:4] == conj[:4] and ver[str(x["idx"])] == "M")
             quebrados += m
@@ -94,21 +137,32 @@ def nota_auditada():
 
 
 def sem_ambiguos():
-    reg = [json.loads(l) for l in (RAIZ / "datasets" / "plano_de_testes" / "registros_teste.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+    # refaz a nota oficial do teste sintético sem os exercícios que li e marquei como ambíguos ("amb")
+    reg = [
+        json.loads(l)
+        for l in (RAIZ / "datasets" / "plano_de_testes" / "registros_teste.jsonl").read_text(encoding="utf-8").splitlines()
+        if l.strip()
+    ]
     ver = json.loads((R / "nivel1" / "auditoria_referencias_teste" / "vereditos.json").read_text(encoding="utf-8"))
     amb = {reg[int(i)]["id"] for i, v in ver.items() if v["veredito"] == "amb"}
     L = [f"| Modelo | Oficial (80 exercícios) | Sem os {len(amb)} ambíguos |", "|---|---|---|"]
     for arq in PRINCIPAIS:
+        # f(excl): corretos / (corretos + errados) do teste sintético, sem os exercícios de `excl`
         def f(excl):
             c = e = 0
             for a in avaliacao(arq):
                 if a["conjunto"] == "sintetico" and a["tarefa"] not in excl:
                     for x in a["casos"]:
-                        c += x["nota"] == "correto"; e += x["nota"] == "errado"
+                        c += x["nota"] == "correto"
+                        e += x["nota"] == "errado"
             return c / (c + e)
         L.append(f"| {NOMES[arq]} | {pct(f(set()))} | {pct(f(amb))} |")
     return "\n".join(L), len(amb)
 
+
+# ---------------------------------------------------------------------------------------------
+# Nível 2: reaproveita o texto que experiments/nivel2.py já gerou
+# ---------------------------------------------------------------------------------------------
 
 def nivel2():
     pasta = R / "nivel2"
@@ -117,6 +171,7 @@ def nivel2():
         f = pasta / nome
         if f.is_file():
             texto = f.read_text(encoding="utf-8")
+            # os títulos desses arquivos descem um nível, para caberem dentro desta página
             partes.append(texto.replace("\n# ", "\n### ").replace("# ", "### ", 1) if texto.startswith("# ") else texto)
     if not partes:
         return "_A rodada do Nível 2 ainda não foi copiada para `experiments/resultados/nivel2/`._"
@@ -125,6 +180,7 @@ def nivel2():
 
 
 def linha_nivel2():
+    # a linha 5 do resumo "em seis linhas" do anexo
     f = R / "nivel2" / "resumo.json"
     if not f.is_file():
         return "5. **Nível 2 (o agente completo):** a comparação está na seção 6."
@@ -137,8 +193,13 @@ def linha_nivel2():
             f"**O ganho do Nível 1 não virou ganho no agente.**")
 
 
+# ---------------------------------------------------------------------------------------------
+# Anexo detalhado: docs/RESULTADOS_DETALHADO.md
+# ---------------------------------------------------------------------------------------------
+
 def main():
     sem, n_amb = sem_ambiguos()
+    # o texto abaixo é o modelo do anexo; as chaves {...} são preenchidas com as tabelas calculadas acima
     texto = f"""# Resultados da Parte 2 (leitura rápida)
 
 Este arquivo é **gerado por `experiments/gerar_resultados_md.py`** a partir dos arquivos de `experiments/resultados/`: nenhum número foi digitado à mão. Para atualizar, rode o script de novo.
@@ -241,12 +302,18 @@ O agente roda cada tarefa e o **teste oculto** decide se está correta. Três ve
 - **Pareado:** comparação em que cada tarefa é medida nos dois modelos, o que é mais sensível que comparar as médias.
 - **Ablação:** tirar um componente para ver se ele fazia diferença (aqui, a etapa do plano de testes).
 """
+    # o anexo reaproveita o mesmo modelo, trocando só o título e apontando para a versão curta
     texto = texto.replace("# Resultados da Parte 2 (leitura rápida)", "# Resultados da Parte 2: anexo detalhado\n\nA versão curta, para ler primeiro, está em [`RESULTADOS.md`](RESULTADOS.md).", 1)
     (RAIZ / "docs" / "RESULTADOS_DETALHADO.md").write_text(texto, encoding="utf-8")
     print("escrito docs/RESULTADOS_DETALHADO.md,", len(texto.splitlines()), "linhas")
 
 
+# ---------------------------------------------------------------------------------------------
+# Versão curta: docs/RESULTADOS.md
+# ---------------------------------------------------------------------------------------------
+
 def pareada_real(x, y):
+    # diferença pareada x − y no teste real, com o IC 95% por bootstrap sobre as tarefas
     dados = {n: an.carregar(a) for n, a in an.MODELOS.items()}
     _, am = an.bootstrap(dados, [x, y], "real", "A")
     difs = [s[0] - s[1] for s in am if s[0] is not None and s[1] is not None]
@@ -256,20 +323,37 @@ def pareada_real(x, y):
 
 
 def main_curto():
+    # --- Nível 1: Accuracy de cada modelo no teste real (4 modelos) ---
     linhas = []
-    for arq, nome in (("q15_base_schema", "1,5B base (sem treino)"), ("q15_base_2exemplos_schema", "1,5B base com 2 exemplos no prompt"),
-                      ("q15_ajustado3ep_schema", "**1,5B treinado com LoRA**"), ("q14b_schema", "Qwen-14B (modelo grande)")):
+    for arq, nome in (
+        ("q15_base_schema", "1,5B base (sem treino)"),
+        ("q15_base_2exemplos_schema", "1,5B base com 2 exemplos no prompt"),
+        ("q15_ajustado3ep_schema", "**1,5B treinado com LoRA**"),
+        ("q14b_schema", "Qwen-14B (modelo grande)"),
+    ):
         r = json.loads((R / "nivel1" / f"{arq}_resumo.json").read_text(encoding="utf-8"))["real"]
         linhas.append(f"| {nome} | **{pct(r['fracao_correta'], 0)}** | {100 * r['ic95'][0]:.0f}% a {100 * r['ic95'][1]:.0f}% |")
     o1, l1, h1 = pareada_real("ajustado (3 épocas)", "base")
     o2, l2, h2 = pareada_real("ajustado (3 épocas)", "14B")
+
+    # --- Nível 2: as linhas A, B e C do resumo.md gerado por nivel2.py (iterações e chamadas vêm de lá) ---
     d = json.loads((R / "nivel2" / "resumo.json").read_text(encoding="utf-8"))
-    linhas_md = [l for l in (R / "nivel2" / "resumo.md").read_text(encoding="utf-8").splitlines() if l.startswith("| ") and l[2] in "ABC" and l[3] == ":"]
+    linhas_md = [
+        l
+        for l in (R / "nivel2" / "resumo.md").read_text(encoding="utf-8").splitlines()
+        if l.startswith("| ") and l[2] in "ABC" and l[3] == ":"
+    ]
     n2 = []
-    for k, nome in (("A", "A: Qwen-14B sozinho"), ("B", "B: 1,5B treinado escreve o plano de testes + 14B"), ("C", "C: sem plano de testes (ablação)")):
+    for k, nome in (
+        ("A", "A: Qwen-14B sozinho"),
+        ("B", "B: 1,5B treinado escreve o plano de testes + 14B"),
+        ("C", "C: sem plano de testes (ablação)"),
+    ):
         cel = [c.strip() for c in [l for l in linhas_md if l[2] == k][0].split("|")]
         it, ch = virgula(cel[6]), virgula(cel[7])   # colunas: iterações e chamadas ao LLM do resumo.md
         n2.append(f"| {nome} | **{round(d[k]['task_success_rate'] * 25)}/25 = {pct(d[k]['task_success_rate'], 0)}** | {pct(d[k]['first_attempt'], 0)} | {it} | {ch} |")
+
+    # o texto abaixo é o modelo da página curta; as chaves {...} são preenchidas com os números calculados acima
     texto = f"""# Resultados da Parte 2
 
 *Gerado por `experiments/gerar_resultados_md.py` a partir de `experiments/resultados/`. Detalhes e análises extras: [`RESULTADOS_DETALHADO.md`](RESULTADOS_DETALHADO.md).*

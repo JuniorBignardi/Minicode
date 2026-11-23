@@ -15,11 +15,16 @@ from pathlib import Path
 
 AQUI = Path(__file__).resolve().parent
 
+# --- variações do prompt de sistema ---
+# cada texto é ACRESCENTADO ao prompt de sistema original do diagnóstico
+
+# lembra ao modelo que, nesta base, o erro costuma estar no teste e não no código
 TEXTO_TAXA_DE_BASE = (
     "\n\nAtenção: neste projeto os testes foram escritos por uma LLM, que erra valores esperados com frequência. "
     "Na grande maioria das falhas o erro está no TESTE (valor esperado errado, entrada que viola várias regras de uma vez), "
     "e não no código. Antes de culpar o código, confirme que o valor esperado do teste está de acordo com a especificação."
 )
+# obriga o modelo a calcular o valor pela spec antes de olhar o código
 TEXTO_DERIVAR = (
     "\n\nMétodo obrigatório: em 'evidencias', escreva primeiro (a) o valor que a ESPECIFICAÇÃO exige para a entrada do teste "
     "que falhou, calculado só a partir da especificação, SEM olhar o código; (b) o valor que o TESTE espera; (c) o valor que o "
@@ -42,6 +47,7 @@ VARIACOES = {   # nome -> (texto acrescentado ao prompt de sistema, ordem dos ca
 
 
 def lado(classificacao):
+    # PLAN_BUG é erro do teste (que seguiu um plano ruim); qualquer outra classificação não aponta ninguém
     return {"CODE_BUG": "CODE_BUG", "TEST_BUG": "TEST_BUG", "PLAN_BUG": "TEST_BUG"}.get(classificacao, "indeterminado")
 
 
@@ -59,7 +65,12 @@ def casos_gravados(pasta):
             continue   # diagnóstico inconclusivo no meio: a correspondência não é segura
         for numero, (chamada, diag) in enumerate(zip(chamadas, linha["diagnosticos"]), start=1):
             if diag["oraculo"] in ("CODE_BUG", "TEST_BUG"):
-                casos.append((f"{linha['rodada']}/{linha['nome']}#{numero}", chamada["mensagens"], diag["oraculo"], diag["classificacao"]))
+                casos.append((
+                    f"{linha['rodada']}/{linha['nome']}#{numero}",
+                    chamada["mensagens"],
+                    diag["oraculo"],
+                    diag["classificacao"],
+                ))
     return casos
 
 
@@ -77,13 +88,21 @@ def main():
     arquivo = saida / "replay_diagnostico.json"
     anteriores = json.loads(arquivo.read_text(encoding="utf-8")) if arquivo.is_file() else []
     resultados = [r for r in anteriores if r["variacao"] not in escolhidas]   # refazer uma variação substitui a anterior
+
+    # --- reenvia cada diagnóstico gravado com cada variação do prompt ---
     for nome in escolhidas:
         extra, ordem = VARIACOES[nome]
-        esquema = {**ESQUEMA_DIAGNOSTICO, "properties": {campo: ESQUEMA_DIAGNOSTICO["properties"][campo] for campo in ordem}}
+        # o schema com os campos na ordem da variação (classificação primeiro ou raciocínio primeiro)
+        esquema = {
+            **ESQUEMA_DIAGNOSTICO,
+            "properties": {campo: ESQUEMA_DIAGNOSTICO["properties"][campo] for campo in ordem},
+        }
         formato = formato_da_resposta(esquema, "diagnostico")
         for identificacao, mensagens, oraculo, original in casos:
             pedido = copy.deepcopy(mensagens)
             pedido[0]["content"] += extra
+
+            # até 2 tentativas, com uma pausa se o servidor falhar
             resposta = None
             for _ in range(2):
                 try:
@@ -91,21 +110,32 @@ def main():
                     break
                 except Exception:
                     time.sleep(3)
+
             diagnostico = interpretar_diagnostico(resposta) if resposta else None
-            resultados.append({"variacao": nome, "caso": identificacao, "oraculo": oraculo,
-                               "modelo": lado(diagnostico["classificacao"]) if diagnostico else "sem_resposta",
-                               "classificacao": diagnostico["classificacao"] if diagnostico else None, "original": original})
+            resultados.append({
+                "variacao": nome, "caso": identificacao, "oraculo": oraculo,
+                "modelo": lado(diagnostico["classificacao"]) if diagnostico else "sem_resposta",
+                "classificacao": diagnostico["classificacao"] if diagnostico else None,
+                "original": original,
+            })
+
+        # grava a cada variação, para não perder o trabalho se o servidor cair
         parcial = [r for r in resultados if r["variacao"] == nome]
         print(f"{nome}: acurácia {sum(r['modelo'] == r['oraculo'] for r in parcial)}/{len(parcial)}", flush=True)
         arquivo.write_text(json.dumps(resultados, ensure_ascii=False, indent=1), encoding="utf-8")
 
-    print("\n| Variação | Acurácia | Recall TEST_BUG | Recall CODE_BUG | Disse CODE_BUG quando o teste estava errado |\n|---|---|---|---|---|")
+    # --- tabela final: uma linha por variação ---
+    print(
+        "\n| Variação | Acurácia | Recall TEST_BUG | Recall CODE_BUG | Disse CODE_BUG quando o teste estava errado |\n"
+        "|---|---|---|---|---|"
+    )
     for nome in dict.fromkeys(r["variacao"] for r in resultados):
         r = [x for x in resultados if x["variacao"] == nome]
         teste = [x for x in r if x["oraculo"] == "TEST_BUG"]
         codigo = [x for x in r if x["oraculo"] == "CODE_BUG"]
         print(f"| {nome} | {sum(x['modelo'] == x['oraculo'] for x in r)}/{len(r)} | "
-              f"{sum(x['modelo'] == 'TEST_BUG' for x in teste)}/{len(teste)} | {sum(x['modelo'] == 'CODE_BUG' for x in codigo)}/{len(codigo)} | "
+              f"{sum(x['modelo'] == 'TEST_BUG' for x in teste)}/{len(teste)} | "
+              f"{sum(x['modelo'] == 'CODE_BUG' for x in codigo)}/{len(codigo)} | "
               f"{sum(x['modelo'] == 'CODE_BUG' for x in teste)}/{len(teste)} |")
 
 

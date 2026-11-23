@@ -4,6 +4,7 @@ Recuperadas do histórico de trabalho da Parte 1 (conferir_verificadores.py) e v
 """
 
 REFERENCIAS_DIFICEIS = {
+    # 1: repositório e serviço de usuários, em dois arquivos (o serviço importa o repositório)
     1: {"repositorio.py": '''class RepositorioUsuarios:
     def __init__(self):
         self._dados = {}
@@ -33,6 +34,7 @@ class ServicoUsuarios:
             raise KeyError(id)
         self.repo.remover(id)
 '''},
+    # 2: mesclar intervalos que se sobrepõem
     2: {"intervalos.py": '''def mesclar(intervalos):
     resultado = []
     for inicio, fim in sorted(intervalos):
@@ -42,6 +44,7 @@ class ServicoUsuarios:
             resultado.append((inicio, fim))
     return resultado
 '''},
+    # 3: carrinho de compras (classe com estado)
     3: {"carrinho.py": '''class Carrinho:
     def __init__(self):
         self.itens = {}
@@ -58,6 +61,7 @@ class ServicoUsuarios:
     def total(self):
         return sum(p * q for p, q in self.itens.values())
 '''},
+    # 4: funções que leem arquivos de texto
     4: {"arquivos_texto.py": '''def contar_linhas(caminho):
     with open(caminho, encoding="utf-8") as f:
         return sum(1 for linha in f if linha.strip())
@@ -67,6 +71,7 @@ def palavras_unicas(caminho):
     with open(caminho, encoding="utf-8") as f:
         return sorted(set(f.read().lower().split()))
 '''},
+    # 5: distância entre pontos e perímetro de um polígono
     5: {"geometria.py": '''import math
 
 
@@ -79,6 +84,7 @@ def perimetro(pontos):
         raise ValueError
     return sum(distancia(pontos[i], pontos[(i + 1) % len(pontos)]) for i in range(len(pontos)))
 '''},
+    # 6: preços com imposto e desconto, sempre arredondados para 2 casas
     6: {"precos.py": '''def arredondar_moeda(valor):
     return round(valor, 2)
 
@@ -94,6 +100,7 @@ def preco_com_desconto(preco, percentual):
 def preco_final(preco, taxa, percentual):
     return arredondar_moeda(preco_com_desconto(preco, percentual) * (1 + taxa))
 '''},
+    # 7: listar tarefas com filtros opcionais
     7: {"tarefas.py": '''def listar(tarefas, apenas_pendentes=False, prioridade=None):
     resultado = list(tarefas)
     if apenas_pendentes:
@@ -102,6 +109,7 @@ def preco_final(preco, taxa, percentual):
         resultado = [t for t in resultado if t["prioridade"] == prioridade]
     return resultado
 '''},
+    # 8: validação de senha, devolvendo a lista de problemas
     8: {"senha.py": '''def validar_senha(senha):
     erros = []
     if len(senha) < 8:
@@ -116,6 +124,7 @@ def preco_final(preco, taxa, percentual):
         erros.append("com_espaco")
     return erros
 '''},
+    # 9: pilha (classe com estado)
     9: {"pilha.py": '''class Pilha:
     def __init__(self):
         self.itens = []
@@ -132,6 +141,7 @@ def preco_final(preco, taxa, percentual):
     def tamanho(self):
         return len(self.itens)
 '''},
+    # 10: leitor de CSV simples
     10: {"csv_simples.py": '''def ler_csv(texto):
     linhas = [l for l in texto.splitlines() if l.strip()]
     cabecalho = [c.strip() for c in linhas[0].split(",")]

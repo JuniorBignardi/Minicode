@@ -5,6 +5,7 @@ Cada referência é validada contra o verificador oculto da tarefa em validar_re
 """
 
 REFERENCIAS_FACEIS = {
+    # 1: fatorial, com ValueError para n negativo
     1: {"fatorial.py": '''def fatorial(n):
     if n < 0:
         raise ValueError("n não pode ser negativo")
@@ -13,10 +14,12 @@ REFERENCIAS_FACEIS = {
         resultado *= i
     return resultado
 '''},
+    # 2: palíndromo, ignorando maiúsculas e espaços
     2: {"palindromo.py": '''def eh_palindromo(texto):
     limpo = texto.lower().replace(" ", "")
     return limpo == limpo[::-1]
 '''},
+    # 3: n-ésimo número de Fibonacci (a demo ao vivo usa esta tarefa)
     3: {"fib.py": '''def fibonacci(n):
     if n < 0:
         raise ValueError("n não pode ser negativo")
@@ -25,15 +28,18 @@ REFERENCIAS_FACEIS = {
         a, b = b, a + b
     return a
 '''},
+    # 4: contagem de palavras em um dicionário
     4: {"contagem.py": '''def contar_palavras(texto):
     contagem = {}
     for palavra in texto.lower().split():
         contagem[palavra] = contagem.get(palavra, 0) + 1
     return contagem
 '''},
+    # 5: média de uma lista
     5: {"calc.py": '''def media(lista):
     return sum(lista) / len(lista)
 '''},
+    # 6: maior elemento de uma lista
     6: {"lista.py": '''def maior(lista):
     resultado = lista[0]
     for x in lista:
@@ -41,17 +47,21 @@ REFERENCIAS_FACEIS = {
             resultado = x
     return resultado
 '''},
+    # 7: número par
     7: {"numeros.py": '''def eh_par(n):
     return n % 2 == 0
 '''},
+    # 8: saudação, formal ou informal
     8: {"saudacao.py": '''def saudacao(nome, formal=False):
     if formal:
         return f'Prezado(a) {nome}'
     return f'Olá, {nome}'
 '''},
+    # 9: preço final com desconto em porcentagem
     9: {"preco.py": '''def preco_final(preco, desconto=0):
     return preco * (1 - desconto / 100)
 '''},
+    # 10 e 11: tarefas de "criar testes": a referência é o arquivo de testes, não o código testado
     10: {"tests/test_estoque.py": '''from estoque import adicionar
 
 
@@ -103,6 +113,7 @@ def test_primo_grande():
 def test_quadrado_de_primo():
     assert eh_primo(49) is False
 '''},
+    # 12: criar usuário, validando nome e idade
     12: {"usuario.py": '''def criar_usuario(nome, idade):
     if not nome:
         raise ValueError("nome vazio")
@@ -110,12 +121,14 @@ def test_quadrado_de_primo():
         raise ValueError("idade fora do intervalo")
     return {'nome': nome, 'idade': idade}
 '''},
+    # 13: validação de e-mail
     13: {"email_utils.py": '''def validar_email(email):
     if email.count("@") != 1:
         return False
     usuario, dominio = email.split("@")
     return bool(usuario) and "." in dominio and not dominio.startswith(".") and not dominio.endswith(".")
 '''},
+    # 14: áreas de retângulo e quadrado (o quadrado reaproveita o retângulo)
     14: {"area.py": '''def area_retangulo(a, b):
     return a * b
 
@@ -123,6 +136,7 @@ def test_quadrado_de_primo():
 def area_quadrado(l):
     return area_retangulo(l, l)
 '''},
+    # 15: lista em maiúsculas
     15: {"texto.py": '''def maiusculas_lista(lista):
     return [item.upper() for item in lista]
 '''},

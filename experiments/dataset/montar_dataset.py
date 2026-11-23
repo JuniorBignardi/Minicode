@@ -24,9 +24,14 @@ import gerar_tarefas
 from gerar_v2 import esperado_em_texto, exemplo_de_treino
 from minicode.spec.plano_de_testes import criterios_da_spec
 
+# fração dos exercícios que vai para cada conjunto (o resto é treino)
 FRACAO_TESTE = 0.1
 FRACAO_VALIDACAO = 0.1
 
+
+# ---------------------------------------------------------------------------
+# Leitura e remoção de repetidos
+# ---------------------------------------------------------------------------
 
 def ler(caminho):
     return [json.loads(l) for l in Path(caminho).read_text(encoding="utf-8").splitlines() if l.strip()]
@@ -36,12 +41,20 @@ def sem_repetidos(registros):
     # mantém o primeiro de cada par com o mesmo nome ou com pedidos muito parecidos
     mantidos, tirados = [], 0
     for r in registros:
-        if any(m["nome"] == r["nome"] or gerar_tarefas.similaridade(m["pedido"], r["pedido"]) > gerar_tarefas.MAX_SIMILARIDADE_ENTRE_SINTETICAS for m in mantidos):
+        if any(
+            m["nome"] == r["nome"]
+            or gerar_tarefas.similaridade(m["pedido"], r["pedido"]) > gerar_tarefas.MAX_SIMILARIDADE_ENTRE_SINTETICAS
+            for m in mantidos
+        ):
             tirados += 1
             continue
         mantidos.append(r)
     return mantidos, tirados
 
+
+# ---------------------------------------------------------------------------
+# Filtros de qualidade dos casos e dos exercícios
+# ---------------------------------------------------------------------------
 
 def caso_suspeito(caso):
     # casos cujo valor esperado não se deduz da spec: a entrada mexe num atributo privado (_x), ou o critério
@@ -52,6 +65,7 @@ def caso_suspeito(caso):
     return bool(comeca_com_erro) and not re.search(r"Error|Exception", caso["esperado"][:40])
 
 
+# palavras comuns de cada língua, para detectar critérios escritos em inglês
 PALAVRAS_EM_INGLES = re.compile(r"\b(raises?|returns?|the|when|if|must|should|is|are|handles?|accepts?)\b", re.I)
 PALAVRAS_EM_PORTUGUES = re.compile(r"\b(retorna|levanta|quando|deve|para|com|se|não|uma|os|as)\b", re.I)
 
@@ -63,6 +77,7 @@ def criterios_em_ingles(registro):
     return em_ingles > len(criterios) / 2
 
 
+# palavras que indicam que um critério fala de erro, que o nega, ou que fala de um valor devolvido
 FALA_EM_ERRO = re.compile(r"levant|lan[cç]|raise|ValueError|TypeError|KeyError|IndexError|rejeit", re.I)
 NEGA_O_ERRO = re.compile(r"n[ãa]o (levant|lan[cç])|sem (levant|lan[cç])|ignor", re.I)
 FALA_EM_RETORNO = re.compile(r"retorn|devolv|return|resulta|produz|armazen|calcul|mant[eé]m|aceit", re.I)
@@ -89,8 +104,14 @@ FORMATO_MONETARIO_QUEBRADO = re.compile(r"R\$[^ \d-]|R\$ ?,|R\$ 0\d|'0\d{2}\.\d{
 
 def excluido_por_leitura(registro):
     # na lista de exclusões manuais, ou com o formato monetário quebrado nos valores esperados (zeros à esquerda, "R$," sem espaço)
-    return registro.get("arquivo") in EXCLUIDOS_POR_LEITURA or any(FORMATO_MONETARIO_QUEBRADO.search(c["esperado"]) for c in registro["casos"])
+    return registro.get("arquivo") in EXCLUIDOS_POR_LEITURA or any(
+        FORMATO_MONETARIO_QUEBRADO.search(c["esperado"]) for c in registro["casos"]
+    )
 
+
+# ---------------------------------------------------------------------------
+# Correções feitas depois da leitura manual (arquivos de trabalho, fora do git)
+# ---------------------------------------------------------------------------
 
 TRADUCOES = AQUI.parent / "execucoes" / "traducoes.json"   # fica na pasta ignorada pelo git (arquivo de trabalho)
 
@@ -106,9 +127,17 @@ def aplicar_traducoes(registros):
         t = traducoes.get(r["nome"])
         antigos = criterios_da_spec(r["especificacao"])
         if t and criterios_em_ingles(r) and len(t["criterios"]) == len(antigos):
+            # troca cada critério antigo pelo traduzido, tanto na spec quanto nos casos
             mapa = dict(zip(antigos, t["criterios"]))
-            spec = "# Specification\n\n## Objective\n" + t["objetivo"] + "\n\n## Acceptance Criteria\n" + "\n".join(f"- {c}" for c in t["criterios"])
-            r = {**r, "especificacao": spec, "casos": [{**c, "criterio": mapa.get(c["criterio"], c["criterio"])} for c in r["casos"]]}
+            spec = (
+                "# Specification\n\n## Objective\n" + t["objetivo"]
+                + "\n\n## Acceptance Criteria\n" + "\n".join(f"- {c}" for c in t["criterios"])
+            )
+            r = {
+                **r,
+                "especificacao": spec,
+                "casos": [{**c, "criterio": mapa.get(c["criterio"], c["criterio"])} for c in r["casos"]],
+            }
             feitos += 1
         resultado.append(r)
     return resultado, feitos
@@ -130,9 +159,18 @@ def aplicar_correcoes_de_referencia(registros):
             referencia = r["referencia"]
             for errado, certo in trechos:
                 referencia = referencia.replace(errado, certo)
-            saidas, _ = gerar_tarefas.saidas_da_referencia({"arquivo": r["arquivo"], "referencia": referencia, "entradas": [c["entrada"] for c in r["casos"]]})
+            # executa as entradas na referência corrigida: o `esperado` é sempre recalculado pela execução
+            saidas, _ = gerar_tarefas.saidas_da_referencia({
+                "arquivo": r["arquivo"],
+                "referencia": referencia,
+                "entradas": [c["entrada"] for c in r["casos"]],
+            })
             if saidas is not None:
-                r = {**r, "referencia": referencia, "casos": [{**c, "esperado": esperado_em_texto(s)} for c, s in zip(r["casos"], saidas)]}
+                r = {
+                    **r,
+                    "referencia": referencia,
+                    "casos": [{**c, "esperado": esperado_em_texto(s)} for c, s in zip(r["casos"], saidas)],
+                }
                 feitos += 1
         resultado.append(r)
     return resultado, feitos
@@ -167,13 +205,21 @@ def filtrar_casos(registros):
     return mantidos, casos_tirados, exercicios_tirados
 
 
+# ---------------------------------------------------------------------------
+# Divisão em treino, validação e teste
+# ---------------------------------------------------------------------------
+
 TESTE_CONGELADO = AQUI / "teste_congelado.json"
 
 
 def dividir(registros, semente=0):
     # sorteio por exercício, separado por professor: devolve {"treino": [...], "validacao": [...], "teste": [...]}
     # o teste vem congelado (os exercícios que li à mão), se o arquivo existir; a validação e o treino vêm do sorteio do resto
-    congelados = set(json.loads(TESTE_CONGELADO.read_text(encoding="utf-8"))["nomes"]) if TESTE_CONGELADO.is_file() else set()
+    congelados = (
+        set(json.loads(TESTE_CONGELADO.read_text(encoding="utf-8"))["nomes"])
+        if TESTE_CONGELADO.is_file()
+        else set()
+    )
     if not any(r["nome"] in congelados for r in registros):
         congelados = set()   # nenhum exercício da lista nesta montagem (por exemplo, nos testes): sorteia o teste também
     rng = random.Random(semente)
@@ -189,8 +235,13 @@ def dividir(registros, semente=0):
     return partes
 
 
+# Parecidos: a validação e o teste não podem ter exercícios parecidos com os do treino.
+# Mede a sobreposição das palavras do pedido (sem as palavras sem informação).
 LIMIAR_DE_PARECIDOS = 0.4
-PALAVRAS_SEM_INFORMACAO = set("a o as os de da do das dos em no na nos nas e que um uma para com se por ao é ser py arquivo função funções classe método implemente crie levanta valueerror typeerror retorna deve".split())
+PALAVRAS_SEM_INFORMACAO = set(
+    "a o as os de da do das dos em no na nos nas e que um uma para com se por ao é ser py arquivo "
+    "função funções classe método implemente crie levanta valueerror typeerror retorna deve".split()
+)
 
 
 def palavras_do_exercicio(registro):
@@ -200,7 +251,10 @@ def palavras_do_exercicio(registro):
 
 def parecido_com_algum(registro, grupo):
     a = palavras_do_exercicio(registro)
-    return any(len(a & b) / max(len(a | b), 1) >= LIMIAR_DE_PARECIDOS for b in (palavras_do_exercicio(g) for g in grupo))
+    return any(
+        len(a & b) / max(len(a | b), 1) >= LIMIAR_DE_PARECIDOS
+        for b in (palavras_do_exercicio(g) for g in grupo)
+    )
 
 
 def afastar_parecidos(partes):
@@ -218,10 +272,17 @@ def afastar_parecidos(partes):
     return partes, movidos
 
 
+# ---------------------------------------------------------------------------
+# Relatório e montagem final
+# ---------------------------------------------------------------------------
+
 def relatorio(partes, tirados, total_lido, filtro=(0, 0)):
-    linhas = ["# Dataset do plano de testes\n", f"Exercícios lidos: {total_lido}. Tirados por repetição: {tirados}. "
-              f"Filtro de casos suspeitos: {filtro[0]} casos removidos e {filtro[1]} exercícios removidos (ficaram com algum critério sem caso).\n",
-              "| Divisão | Exercícios | Casos | Casos de exceção |\n|---|---|---|---|"]
+    linhas = [
+        "# Dataset do plano de testes\n",
+        f"Exercícios lidos: {total_lido}. Tirados por repetição: {tirados}. "
+        f"Filtro de casos suspeitos: {filtro[0]} casos removidos e {filtro[1]} exercícios removidos (ficaram com algum critério sem caso).\n",
+        "| Divisão | Exercícios | Casos | Casos de exceção |\n|---|---|---|---|",
+    ]
     for nome, regs in partes.items():
         casos = [c for r in regs for c in r["casos"]]
         excecoes = sum(1 for c in casos if "Error" in c["esperado"] or "Exception" in c["esperado"])
@@ -233,12 +294,16 @@ def relatorio(partes, tirados, total_lido, filtro=(0, 0)):
     linhas.append("\n## Temas\n\n| Tema | Exercícios |\n|---|---|")
     linhas += [f"| {valor} | {n} |" for valor, n in Counter(r.get("tema") for r in todos).most_common()]
     casos_por = [len(r["casos"]) for r in todos]
-    linhas.append(f"\nCasos por exercício: mínimo {min(casos_por)}, média {sum(casos_por) / len(casos_por):.1f}, máximo {max(casos_por)}.")
+    linhas.append(
+        f"\nCasos por exercício: mínimo {min(casos_por)}, média {sum(casos_por) / len(casos_por):.1f}, máximo {max(casos_por)}."
+    )
     return "\n".join(linhas) + "\n"
 
 
 def montar(arquivos, saida, semente=0):
     registros = [r for arquivo in arquivos for r in ler(arquivo)]
+
+    # correções feitas depois da leitura manual, depois repetidos e filtros de qualidade
     registros, traduzidos = aplicar_traducoes(registros)
     registros, corrigidos = aplicar_correcoes_de_referencia(registros)
     print(f"exercícios traduzidos do inglês: {traduzidos} | referências corrigidas: {corrigidos}")
@@ -246,8 +311,12 @@ def montar(arquivos, saida, semente=0):
     unicos, casos_tirados, exercicios_tirados = filtrar_casos(unicos)
     for numero, r in enumerate(unicos, start=1):
         r["id"] = f"e{numero:04d}"
+
+    # divide em treino/validação/teste e afasta da validação e do teste o que for parecido com o treino
     partes, movidos = afastar_parecidos(dividir(unicos, semente))
     print(f"movidos para o treino por serem parecidos com um exercício do treino: {movidos}")
+
+    # grava os registros (com a referência) e os exemplos de treino de cada divisão
     saida = Path(saida)
     saida.mkdir(parents=True, exist_ok=True)
     for nome, regs in partes.items():
@@ -255,14 +324,20 @@ def montar(arquivos, saida, semente=0):
             f.writelines(json.dumps(r, ensure_ascii=False) + "\n" for r in regs)
         with open(saida / f"exemplos_{nome}.jsonl", "w", encoding="utf-8") as f:
             f.writelines(json.dumps(exemplo_de_treino(r), ensure_ascii=False) + "\n" for r in regs)
-    (saida / "relatorio.md").write_text(relatorio(partes, tirados, len(registros), (casos_tirados, exercicios_tirados)), encoding="utf-8")
+    (saida / "relatorio.md").write_text(
+        relatorio(partes, tirados, len(registros), (casos_tirados, exercicios_tirados)), encoding="utf-8"
+    )
     return partes, tirados, (casos_tirados, exercicios_tirados)
 
 
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
     partes, tirados, filtro = montar(sys.argv[2:], sys.argv[1])
-    print({nome: len(regs) for nome, regs in partes.items()}, "repetidos tirados:", tirados, "| filtro (casos, exercícios):", filtro)
+    print(
+        {nome: len(regs) for nome, regs in partes.items()},
+        "repetidos tirados:", tirados,
+        "| filtro (casos, exercícios):", filtro,
+    )
 
 
 if __name__ == "__main__":

@@ -24,8 +24,9 @@ sys.path.insert(0, str(AQUI))
 sys.path.insert(0, str(AQUI.parent))   # experiments/ (oraculo)
 sys.path.insert(0, str(AQUI.parents[1] / "eval_tasks"))
 
-PAUSA = float(os.environ.get("PAUSA_ENTRE_CHAMADAS", "0"))
-NAO_COPIAR = shutil.ignore_patterns(".minicode", ".git", "__pycache__", ".pytest_cache")
+# --- configuração ---
+PAUSA = float(os.environ.get("PAUSA_ENTRE_CHAMADAS", "0"))   # segundos de espera antes de cada chamada (0 = sem pausa)
+NAO_COPIAR = shutil.ignore_patterns(".minicode", ".git", "__pycache__", ".pytest_cache")   # fora dos snapshots
 TEMPERATURA_DAS_FASES_SEM_SCHEMA = {0.6: "spec", 0.5: "plano"}   # TEMPERATURA_POR_FASE em agent/conversas/fases.py
 
 
@@ -38,9 +39,10 @@ def fase_da_chamada(temperatura, argumentos):
 
 
 def criar_chat(chat_real, raiz):
+    # devolve uma função chat que se comporta como a original, mas grava cada chamada no registro
     registro = raiz / ".minicode" / "chamadas_llm.jsonl"
     registro.parent.mkdir(parents=True, exist_ok=True)
-    diagnosticos = [0]
+    diagnosticos = [0]   # contador dentro de uma lista, para a função interna poder alterá-lo
 
     def chat(mensagens, temperature=0, **argumentos):
         if PAUSA:
@@ -48,6 +50,7 @@ def criar_chat(chat_real, raiz):
         fase = fase_da_chamada(temperature, argumentos)
         pedido = copy.deepcopy(mensagens)   # o agente acrescenta a resposta à mesma lista depois da chamada
 
+        # a cada diagnóstico, guarda uma cópia do projeto naquele momento (usada depois pelo oráculo)
         if fase == "diagnostico":
             diagnosticos[0] += 1
             shutil.copytree(raiz, registro.parent / "snapshots" / f"diag_{diagnosticos[0]:02d}", ignore=NAO_COPIAR)
@@ -61,19 +64,24 @@ def criar_chat(chat_real, raiz):
             erro = f"{type(e).__name__}: {e}"
             raise
         finally:
+            # grava a chamada mesmo quando ela falhou (o erro fica no registro)
             with open(registro, "a", encoding="utf-8") as f:
-                f.write(json.dumps({"fase": fase, "temperatura": temperature, "mensagens": pedido, "resposta": resposta,
-                                    "erro": erro, "segundos": round(time.time() - inicio, 2)}, ensure_ascii=False) + "\n")
+                f.write(json.dumps({
+                    "fase": fase, "temperatura": temperature, "mensagens": pedido, "resposta": resposta,
+                    "erro": erro, "segundos": round(time.time() - inicio, 2),
+                }, ensure_ascii=False) + "\n")
     return chat
 
 
 def rodar_uma(tarefa, raiz, chat_real, rodar_agente):
+    # começa de uma pasta limpa, só com os arquivos iniciais da tarefa
     shutil.rmtree(raiz, ignore_errors=True)
     raiz.mkdir(parents=True)
     for caminho, conteudo in tarefa["arquivos"].items():
         (raiz / caminho).parent.mkdir(parents=True, exist_ok=True)
         (raiz / caminho).write_text(conteudo, encoding="utf-8")
 
+    # roda o agente, com a tela desviada para saida.log
     inicio, erro, execucao = time.time(), None, None
     with open(raiz / "saida.log", "w", encoding="utf-8") as log, contextlib.redirect_stdout(log):
         try:
@@ -86,14 +94,19 @@ def rodar_uma(tarefa, raiz, chat_real, rodar_agente):
     except Exception:
         codigo_correto = False
 
+    # se o agente falhou antes de terminar (execucao vazia), os campos ficam com valores neutros
     resultado = {
         "id": tarefa["id"], "nome": tarefa["nome"], "tipo": tarefa["tipo"], "erro_do_corredor": erro,
         "estado": execucao.estado if execucao else "ERRO", "codigo_correto": codigo_correto,
-        "reparos": execucao.tentativas if execucao else 0, "chamadas": execucao.chamadas_llm if execucao else 0,
-        "iteracoes": execucao.iteracoes if execucao else 0, "segundos": round(time.time() - inicio),
+        "reparos": execucao.tentativas if execucao else 0,
+        "chamadas": execucao.chamadas_llm if execucao else 0,
+        "iteracoes": execucao.iteracoes if execucao else 0,
+        "segundos": round(time.time() - inicio),
         "arquivos_alterados": list(execucao.arquivos_alterados) if execucao else [],
         "plano_de_testes": execucao.plano_de_testes if execucao else None,
-        "testes_descartados": [list(t) if isinstance(t, tuple) else t for t in execucao.testes_descartados] if execucao else [],
+        "testes_descartados": (
+            [list(t) if isinstance(t, tuple) else t for t in execucao.testes_descartados] if execucao else []
+        ),
     }
     (raiz / "resultado.json").write_text(json.dumps(resultado, ensure_ascii=False, indent=1), encoding="utf-8")
     return resultado
@@ -116,10 +129,13 @@ def main():
                 continue
             raiz = destino / f"{conjunto}_r{rodada}" / f"tarefa_{tarefa['id']:02d}"
             if (raiz / "resultado.json").exists():
-                continue
+                continue   # já rodou: permite retomar depois de uma interrupção
             r = rodar_uma(tarefa, raiz, chat_real, rodar_agente)
-            print(f"[r{rodada} {tarefa['id']:02d}] {tarefa['nome']:34} -> {r['estado']:6} correto={r['codigo_correto']} "
-                  f"reparos={r['reparos']} chamadas={r['chamadas']} {r['segundos']}s", flush=True)
+            print(
+                f"[r{rodada} {tarefa['id']:02d}] {tarefa['nome']:34} -> {r['estado']:6} correto={r['codigo_correto']} "
+                f"reparos={r['reparos']} chamadas={r['chamadas']} {r['segundos']}s",
+                flush=True,
+            )
 
 
 if __name__ == "__main__":

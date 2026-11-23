@@ -29,7 +29,13 @@ warnings.filterwarnings("ignore")   # a referência do modelo às vezes tem esca
 
 from temas import TEMAS  # noqa: E402
 
-ESTILOS = ["uma função", "duas funções que se complementam", "uma classe com estado", "uma função que levanta exceção em casos inválidos"]
+# o estilo do exercício, sorteado junto com o tema para variar a forma do código pedido
+ESTILOS = [
+    "uma função",
+    "duas funções que se complementam",
+    "uma classe com estado",
+    "uma função que levanta exceção em casos inválidos",
+]
 
 SISTEMA = """Você cria pequenos exercícios de programação em Python para avaliar um agente de programação.
 
@@ -46,6 +52,7 @@ Regras do exercício:
 
 Responda somente com o JSON pedido."""
 
+# o formato JSON que o professor é obrigado a devolver (schema)
 ESQUEMA = {
     "type": "object",
     "properties": {
@@ -59,6 +66,7 @@ ESQUEMA = {
     "additionalProperties": False,
 }
 
+# limites dos filtros automáticos
 MAX_SIMILARIDADE = 0.45     # com o pedido de uma tarefa do benchmark
 MAX_SIMILARIDADE_ENTRE_SINTETICAS = 0.6
 MAX_FRACAO_DE_EXCECOES = 0.5
@@ -68,6 +76,7 @@ def palavras(texto):
     return set(re.findall(r"\w+", texto.lower()))
 
 
+# parecido com Jaccard: palavras em comum ÷ palavras no total (0 = nada em comum, 1 = iguais)
 def similaridade(a, b):
     a, b = palavras(a), palavras(b)
     return len(a & b) / max(len(a | b), 1)
@@ -97,8 +106,10 @@ def saidas_da_referencia(tarefa):
     finally:
         shutil.rmtree(pasta, ignore_errors=True)
 
+    # duas execuções com resultados diferentes: a referência não é determinística
     if rodadas[0] != rodadas[1]:
         return None, "não determinística"
+    # entrada que nem executa (NameError, SyntaxError...) não dá para usar como caso de teste
     for saida in rodadas[0]:
         if not saida["ok"] and saida["excecao"] in oraculo.NAO_AVALIAVEIS:
             return None, f"a entrada não executa ({saida['excecao']})"
@@ -107,6 +118,8 @@ def saidas_da_referencia(tarefa):
 
 def validar_tarefa(tarefa, existentes=()):
     # (saídas, "") se a tarefa serve, ou (None, motivo)
+
+    # 1) estrutura: nome, arquivo e entradas bem formados; referência compila; o pedido cita o arquivo
     try:
         nome, arquivo = tarefa["nome"], tarefa["arquivo"]
         entradas = tarefa["entradas"]
@@ -122,16 +135,23 @@ def validar_tarefa(tarefa, existentes=()):
     except (KeyError, TypeError, SyntaxError) as erro:
         return None, f"estrutura inválida ({type(erro).__name__})"
 
+    # 2) todas as entradas chamam algo que a referência define
     definidos = re.findall(r"^(?:def|class) (\w+)", tarefa["referencia"], re.M)
     if not definidos or not all(any(nome_definido in e for nome_definido in definidos) for e in entradas):
         return None, "alguma entrada não chama o código"
+
+    # 3) não pode parecer com uma tarefa do benchmark (o conjunto de teste) nem repetir uma já aceita
     if any(similaridade(tarefa["pedido"], p) > MAX_SIMILARIDADE for p in pedidos_do_benchmark()):
         return None, "parecida com uma tarefa do benchmark"
     if {nome, Path(arquivo).stem} & nomes_do_benchmark():
         return None, "nome igual ao de uma tarefa do benchmark"
-    if any(e["nome"] == nome or similaridade(tarefa["pedido"], e["pedido"]) > MAX_SIMILARIDADE_ENTRE_SINTETICAS for e in existentes):
+    if any(
+        e["nome"] == nome or similaridade(tarefa["pedido"], e["pedido"]) > MAX_SIMILARIDADE_ENTRE_SINTETICAS
+        for e in existentes
+    ):
         return None, "repete uma tarefa sintética"
 
+    # 4) executa a referência: tem que ser determinística, com saídas comuns e variadas
     saidas, motivo = saidas_da_referencia(tarefa)
     if saidas is None:
         return None, motivo
@@ -148,28 +168,44 @@ def normalizar(tarefa):
     # o nome vem da primeira definição da referência e o pedido passa a citar o arquivo.
     arquivo = str(tarefa["arquivo"]).strip().lower().replace(" ", "_")
     arquivo = arquivo if arquivo.endswith(".py") else arquivo + ".py"
-    definicoes = [n.name for n in ast.parse(tarefa["referencia"]).body if isinstance(n, (ast.FunctionDef, ast.ClassDef))]
+    definicoes = [
+        n.name for n in ast.parse(tarefa["referencia"]).body if isinstance(n, (ast.FunctionDef, ast.ClassDef))
+    ]
     pedido = str(tarefa["pedido"]).strip()
-    return {"nome": definicoes[0] if definicoes else "", "arquivo": arquivo,
-            "pedido": pedido if arquivo in pedido else f"No arquivo {arquivo}: {pedido}",
-            "referencia": tarefa["referencia"],
-            "entradas": [e.strip() for e in tarefa["entradas"] if isinstance(e, str) and e.strip()]}
+    return {
+        "nome": definicoes[0] if definicoes else "",
+        "arquivo": arquivo,
+        "pedido": pedido if arquivo in pedido else f"No arquivo {arquivo}: {pedido}",
+        "referencia": tarefa["referencia"],
+        "entradas": [e.strip() for e in tarefa["entradas"] if isinstance(e, str) and e.strip()],
+    }
 
 
+# Uma chamada ao professor: sorteia tema, estilo e número de regras, pede o exercício e normaliza a resposta.
+# Devolve a tarefa e os parâmetros do sorteio (guardados no registro).
 def pedir_tarefa(chat, formato_da_resposta, rng):
     tema, estilo, regras = rng.choice(TEMAS), rng.choice(ESTILOS), rng.choice([1, 2, 2, 3, 3, 4])
     usuario = f"Tema: {tema}. Estilo: {estilo}. Regras distintas no comportamento: {regras}."
-    resposta = chat([{"role": "system", "content": SISTEMA}, {"role": "user", "content": usuario}],
-                    temperature=0.9, response_format=formato_da_resposta(ESQUEMA, "tarefa"))
+    resposta = chat(
+        [{"role": "system", "content": SISTEMA}, {"role": "user", "content": usuario}],
+        temperature=0.9,
+        response_format=formato_da_resposta(ESQUEMA, "tarefa"),
+    )
     return normalizar(json.loads(resposta)), {"tema": tema, "estilo": estilo, "regras": regras}
 
 
 def gerar(chat, formato_da_resposta, saida, quantidade, semente=0, threads=2, log=print):
     saida = Path(saida)
-    existentes = [json.loads(l) for l in saida.read_text(encoding="utf-8").splitlines() if l.strip()] if saida.is_file() else []
+    # retoma de onde parou: lê as tarefas já gravadas no arquivo de saída
+    existentes = (
+        [json.loads(l) for l in saida.read_text(encoding="utf-8").splitlines() if l.strip()]
+        if saida.is_file()
+        else []
+    )
     rng = random.Random(semente + len(existentes))
     descartes, tentativas = {}, 0
 
+    # uma tentativa que falha (rede, JSON inválido...) vira um descarte e não derruba o lote
     def uma_tentativa(_):
         try:
             return pedir_tarefa(chat, formato_da_resposta, rng)
@@ -177,7 +213,8 @@ def gerar(chat, formato_da_resposta, saida, quantidade, semente=0, threads=2, lo
             return None, {"erro": f"{type(erro).__name__}"}
 
     with ThreadPoolExecutor(threads) as pool:
-        while len(existentes) < quantidade and tentativas < 10 * quantidade + 10:   # trava: modelo fora do ar ou exigente demais
+        # trava: modelo fora do ar ou exigente demais
+        while len(existentes) < quantidade and tentativas < 10 * quantidade + 10:
             for tarefa, meta in pool.map(uma_tentativa, range(threads)):
                 tentativas += 1
                 if tentativas % 10 == 0:
@@ -185,6 +222,7 @@ def gerar(chat, formato_da_resposta, saida, quantidade, semente=0, threads=2, lo
                 if tarefa is None:
                     descartes[meta["erro"]] = descartes.get(meta["erro"], 0) + 1
                     continue
+                # só entra no arquivo a tarefa que passa em todos os filtros
                 saidas, motivo = validar_tarefa(tarefa, existentes)
                 if saidas is None:
                     descartes[motivo] = descartes.get(motivo, 0) + 1
@@ -193,7 +231,10 @@ def gerar(chat, formato_da_resposta, saida, quantidade, semente=0, threads=2, lo
                 with open(saida, "a", encoding="utf-8") as f:
                     f.write(json.dumps(registro, ensure_ascii=False) + "\n")
                 existentes.append(registro)
-                log(f"[{len(existentes)}/{quantidade}] {tarefa['nome']} ({meta['tema']}, {meta['regras']} regras) | tentativas {tentativas}")
+                log(
+                    f"[{len(existentes)}/{quantidade}] {tarefa['nome']} "
+                    f"({meta['tema']}, {meta['regras']} regras) | tentativas {tentativas}"
+                )
                 if len(existentes) >= quantidade:
                     break
     log(f"pronto: {len(existentes)} tarefas em {tentativas} tentativas; descartes: {descartes}")
@@ -204,6 +245,7 @@ def main():
     sys.path.insert(0, str(AQUI.parent.parent / "src"))
     from minicode.llm.client import chat
     from minicode.llm.esquema import formato_da_resposta
+
     saida, quantidade = sys.argv[1], int(sys.argv[2])
     semente = int(sys.argv[3]) if len(sys.argv) > 3 else 0
     threads = int(sys.argv[4]) if len(sys.argv) > 4 else 2
