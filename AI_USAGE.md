@@ -4,6 +4,8 @@ Trabalho individual. Este documento descreve, de forma resumida, como ferramenta
 
 ## Ferramentas utilizadas
 - **Claude Code** (extensão do VS Code), empregado principalmente em modo de planejamento.
+- **Modelos como professores na Parte 2** (geração dos exercícios do dataset): Nemotron 3 Ultra 550B e Nemotron 3.5 Super 120B (API da NVIDIA) e DeepSeek v4.1 Flash (Qwen cloud). Eles escrevem o exercício; **os valores esperados vêm da execução da referência pelo nosso programa, nunca de um modelo**.
+- **Google Colab** (treino) e **RunPod** (servir o Qwen-14B e o 1,5B ajustado na avaliação do agente).
 
 ## Forma de utilização
 O enunciado permite e incentiva o uso de IA, desde que o aluno seja responsável pelo código e consiga explicá-lo. Por isso, o desenvolvimento é feito em conjunto com o Claude Code, com a seguinte divisão:
@@ -37,6 +39,12 @@ As decisões de projeto, a integração entre os módulos e a validação dos re
 | `tracing/tela.py`, `cli/main.py` (modo interativo), `examples/` | escrita do código e dos projetos de demonstração | pedido de mostrar mais ao usuário, como o Claude Code faz (etapas, pensamento do modelo, diff das escritas, resultado dos testes, reparos); escolha dos cenários de demonstração |
 | `eval_tasks/` | escrita dos executores, das tarefas e dos verificadores ocultos | escolha dos tipos de tarefa, decisão de usar o Qwen 14B por um endpoint próprio, execução e interpretação das rodadas |
 | `README.md`, `docs/architecture.md`, `eval_tasks/README.md` | redação | conferência dos números e das afirmações com os registros das execuções |
+| Parte 2: hipótese e critérios (`docs/hipotese_parte2.md`) | redação | escolha da função (plano de testes), das hipóteses e dos limiares **antes** do treino |
+| Parte 2: dataset (`experiments/dataset/`, `datasets/`) | código dos geradores, filtros, auditoria e leitura de todos os exemplos para achar e corrigir erros | decisão de usar o valor esperado vindo da execução da referência, de ficar com o dataset em vez de refazê-lo, de gerar mais exemplos em lotes de 10 revisados à mão, e de publicar o dataset |
+| Parte 2: oráculo e avaliação (`experiments/oraculo.py`, `avaliar_*`, `analise_nivel1.py`, `nivel2.py`) | código e testes | decisão de comparar todos os modelos com o mesmo prompt e o mesmo formato, de descartar as comparações sem schema, e de auditar os casos inavaliáveis |
+| Parte 2: treino (`notebooks/train.ipynb`, `train_checkpoints.ipynb`) | código dos notebooks | execução no Colab, escolha dos hiperparâmetros e leitura das curvas |
+| Parte 2: integração (`llm/client.py`, `orquestrador.py`, `revisoes.py`) | código e testes do modelo especializado no plano de testes | decisão de usar o especialista só na primeira versão do plano, deixando a revisão e a correção no 14B |
+| Parte 2: infraestrutura (RunPod) | a IA operou os servidores por SSH com a minha autorização (instalou Ollama e vLLM, copiou os adaptadores) | criação das contas e dos pods, recarga de crédito e desligamento dos pods |
 
 ## Verificação
 - Testes automatizados com `pytest`.
@@ -55,6 +63,16 @@ As decisões de projeto, a integração entre os módulos e a validação dos re
 - **Ferramenta que o modelo usou mal.** A IA implementou o `run_command` ligado ao validador de comandos, com um gate que desfaz gravações feitas por comando. Em duas execuções da demo de correção de bug o modelo o usou 5 a 8 vezes, a maioria para rodar o `pytest` que o sistema já roda, e gastou as 40 iterações. Decidi retirá-lo e o commit foi revertido. A IA também rodou testes no endpoint errado (o `.env` apontava para outro modelo) sem conferir antes.
 - **Escopo errado.** A IA incluiu um estudo de ablação na Parte 1, sendo que ele é da Parte 2; foi retirado do repositório e dos READMEs a pedido meu.
 - **Viés em prompts.** Os primeiros prompts continham exemplos específicos das tarefas; a pedido meu foram trocados por regras gerais.
+
+### Parte 2
+- **Leitura que não foi leitura.** A IA disse ter lido todos os 687 exemplos de treino quando só tinha conferido uma versão compacta; só depois de eu pedir uma leitura de verdade (e ela achar cerca de 30 referências com valor esperado errado) o dataset foi corrigido.
+- **Sugestão que contradizia uma decisão registrada.** A IA sugeriu publicar o dataset no GitHub, mas o próprio código dizia que os termos da API proibiam. Ela percebeu antes de publicar e perguntou; decidi que podia publicar.
+- **Avaliação que media a coisa errada.** A primeira comparação foi feita sem forçar o formato JSON, e o modelo base tirou 0% porque não produzia um plano legível, e o 14B sem schema também não produziu nenhuma resposta legível. O agente real sempre usa schema. A IA parou o experimento, refez tudo com o mesmo schema para todos e deixou o resultado antigo só como secundário.
+- **Métrica com definição errada.** Uma tabela de "planos sem nenhum caso errado" dava vantagem ao modelo base, porque os planos dele eram quase só casos que não rodam e passavam de graça. Foi percebido e corrigido na hora.
+- **Casos inavaliáveis tratados como neutros.** A nota oficial deixava de fora os casos que a referência não executa. Ao ler os 355 casos, quase todos eram testes quebrados pelo próprio modelo (objeto nunca criado, texto no lugar de código), o que favorecia o 14B. A nota oficial foi mantida e a versão auditada entrou como análise de sensibilidade.
+- **Comando perigoso sugerido.** A IA recomendou matar o processo do kernel antigo no Colab para liberar a GPU, e isso derrubou a sessão. Nada se perdeu porque os resultados e os adaptadores já estavam no Drive.
+- **Erro de caminho no executor do Nível 2.** O teste de fumaça mostrou que os resultados foram gravados dentro de `eval_tasks/` por causa de um caminho relativo; a IA corrigiu e removeu a pasta criada por engano.
+- **Estimativas de tempo erradas.** Previu 40 a 90 minutos para o treino (levou 25) e deu estimativas otimistas ou pessimistas para a geração e o envio dos arquivos.
 
 ## Credenciais
 A chave de acesso ao endpoint é mantida apenas em `.env` ou em variáveis de ambiente, nunca no repositório (o arquivo `.env` está no `.gitignore`).

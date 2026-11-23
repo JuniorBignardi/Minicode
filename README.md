@@ -10,7 +10,7 @@ pedido ─▶ SPEC ─▶ PLANO ─▶ PLANO DE TESTES ─▶ IMPLEMENTAÇÃO �
                                                    └── REPARO ◀── DIAGNÓSTICO
 ```
 
-Documentação detalhada: [docs/architecture.md](docs/architecture.md) · avaliação: [eval_tasks/README.md](eval_tasks/README.md) · uso de IA: [AI_USAGE.md](AI_USAGE.md).
+Documentação detalhada: [docs/architecture.md](docs/architecture.md) · avaliação: [eval_tasks/README.md](eval_tasks/README.md) · **Parte 2 (fine-tuning): [seção 12](#12-parte-2-especializando-uma-llm)** · uso de IA: [AI_USAGE.md](AI_USAGE.md).
 
 ## 1. Como executar
 
@@ -34,6 +34,9 @@ pytest                             # 300+ testes, sem chamar a LLM
 | `MINICODE_API_KEY` | chave fornecida pela disciplina (apenas em `.env` ou variável de ambiente) |
 | `MINICODE_MODEL` | nome do modelo servido pelo endpoint (um Qwen de ~14B) |
 | `MINICODE_DEBUG` | `1` grava o fluxo completo em `.minicode/debug.jsonl` (opcional) |
+| `MINICODE_PLAN_API_BASE`, `MINICODE_PLAN_MODEL` | (Parte 2, opcionais) URL e nome de um **modelo especializado** que escreve a primeira versão do plano de testes; `MINICODE_PLAN_API_KEY` é opcional. Sem elas, um modelo só faz tudo |
+| `MINICODE_ABLACAO` | (executores de `eval_tasks/`, opcional) liga ou desliga componentes do agente, por exemplo `planejar_testes=False` |
+| `MINICODE_PAUSA` | (executores, opcional) segundos de pausa entre chamadas; padrão 1, use 0 em servidor próprio |
 
 Uso: entre na pasta do projeto que será modificado e rode `minicode`.
 
@@ -313,9 +316,61 @@ Resultados negativos fazem parte da resposta experimental:
 - Juízes LLM erram nos dois sentidos (aprovam o errado e reprovam o certo). Por isso nenhum juiz bloqueia sozinho: os testes são o oráculo final.
 - O modelo erra aritmética ao calcular valores esperados; a execução dos testes é quem corrige o plano (`PLAN_BUG`).
 - O descarte final de testes favorece entregar código funcionando em vez de cobertura: um teste certo pode ser descartado se o diagnóstico errar. Fica registrado e é mostrado ao usuário.
-- Parte 2 (LoRA/QLoRA, dataset, ablação do treinamento) ainda não foi feita.
+- As limitações da Parte 2 (dataset sintético pequeno, 25 tarefas reais, ruído entre rodadas) estão na [seção 12](#12-parte-2-especializando-uma-llm).
 
-## 12. Estrutura do repositório
+## 12. Parte 2: especializando uma LLM
+
+**Pergunta:** é possível especializar uma LLM pequena para executar melhor uma função do agente? **Função escolhida: escrever o plano de testes.** Na Parte 1, o Qwen-14B escreveu o valor esperado errado em 38% dos casos avaliáveis, e esses erros se propagam: o agente "conserta" um código que estava certo. A hipótese, os critérios de decisão e os limites foram escritos **antes** do treino em [docs/hipotese_parte2.md](docs/hipotese_parte2.md).
+
+### Dataset ([datasets/plano_de_testes/](datasets/plano_de_testes/))
+Cada exemplo é o prompt que o agente manda (pedido, spec e plano) e a resposta certa, um JSON `{"casos": [{criterio, entrada, esperado}]}`. O valor `esperado` **vem da execução da solução de referência, nunca de um modelo**. Modelos grandes (Nemotron 550B e 120B, DeepSeek v4.1) escrevem exercícios completos; o programa executa a referência, aplica filtros automáticos, um segundo modelo resolve o exercício só pelo pedido e as divergências são conferidas, e todos os exemplos foram lidos. **754 treino, 79 validação, 80 teste**, divididos por exercício. Detalhes, processo e limitações no [README do dataset](datasets/plano_de_testes/README.md).
+
+### Modelo e LoRA
+Qwen2.5-1.5B-Instruct com LoRA: o peso `W` fica congelado e aprendemos só `ΔW = B·A`, com `A ∈ ℝ^(r×d)`, `B ∈ ℝ^(d×r)` e `r ≪ d`, de modo que `W' = W + (α/r)·B·A`. `B` começa em zero, então o modelo parte idêntico ao original, e em vez de `d×d` parâmetros por matriz treinamos `2·r·d`. Com r=16 e α=32 nas 7 projeções de cada camada, são **18,46 milhões de parâmetros treináveis de 1,56 bilhão (1,18%)**, o que cabe numa GPU L4 do Colab. A perda é calculada só na resposta. 3 épocas (285 passos) em ~25 min.
+
+Notebooks (Colab, L4): [`notebooks/train.ipynb`](notebooks/train.ipynb) é o treino principal (adaptador das 3 épocas); [`notebooks/train_checkpoints.ipynb`](notebooks/train_checkpoints.ipynb) acrescenta um adaptador por época e a volta ao ponto de menor perda de validação. Curvas em [`experiments/resultados/treino/`](experiments/resultados/treino/): a perda de validação para de cair por volta do passo 175 (0,140) e sobe um pouco (0,154), ou seja, **sobreajuste leve na terceira época**.
+
+### Nível 1: a função sozinha
+Os mesmos 60 prompts reais das 25 tarefas e 80 do teste sintético, para todos os modelos, com o formato forçado por JSON Schema (como o agente faz) e temperatura 0,3. Cada caso é executado na solução de referência (o **oráculo**): correto, errado ou inavaliável. Métrica: casos corretos ÷ (corretos + errados).
+
+| Modelo | Real (25 tarefas) | Sintético (80 exercícios) |
+|---|---|---|
+| 1,5B base (baseline) | 10,2% | 9,2% |
+| 1,5B base com 2 exemplos no prompt | 32,1% | 47,6% |
+| **1,5B + LoRA (3 épocas)** | **65,0%** | **66,8%** |
+| 1,5B + LoRA (melhor ponto da validação) | 67,5% | 71,5% |
+| Qwen-14B (referência) | 67,4% | 69,8% |
+
+Intervalos de confiança (bootstrap sobre tarefas) e comparações pareadas em [`experiments/resultados/nivel1/analise.md`](experiments/resultados/nivel1/analise.md). O ajustado supera o base e o base com 2 exemplos com intervalo separado de zero nos dois testes (**H1 confirmada**: passa do critério de +15 pontos definido antes). Contra o 14B, o resultado é **comparável**: as diferenças ficam dentro do ruído.
+
+**Casos inavaliáveis.** O 14B escreve muitos casos que a referência nem consegue executar (65 no real, contra 18 do ajustado). Li os 355 casos inavaliáveis de 3 modelos um por um ([auditoria](experiments/resultados/nivel1/auditoria_inavaliaveis/)): 331 são testes quebrados pelo próprio modelo (objeto nunca criado, método chamado como função, texto no lugar de código), 14 eram testes válidos e corretos que o oráculo deixa de contar, e 10 dependem de arquivos. Contando os quebrados como erro, a nota do ajustado quase não muda (64,3% real, 65,1% sintético) e a do 14B cai (51,7% e 60,5%). A nota oficial é a pré-definida; esta é uma análise de sensibilidade.
+
+**Limitações do Nível 1.** Só 25 tarefas reais, intervalos largos; o oráculo é tão bom quanto a referência (no teste sintético, li os 80 exercícios um a um: nenhuma referência contradiz o pedido e 7 têm ambiguidade, que muda os números em no máximo 2 pontos, ver [auditoria](experiments/resultados/nivel1/auditoria_referencias_teste/README.md); no teste real as referências passam nos verificadores ocultos); o 14B foi medido com o prompt cru, sem a revisão do plano que o agente faz; e nos planos em que **todos** os casos estão certos o 14B vai melhor (33% contra 20% no real).
+
+### Nível 2: o agente completo e a ablação
+O MiniCode aceita um modelo especializado só para a **primeira versão do plano de testes** (`MINICODE_PLAN_API_BASE` e `MINICODE_PLAN_MODEL`); a revisão e a correção do plano, a spec, o código e o reparo continuam no 14B. Três configurações nas 25 tarefas, com o verificador oculto de cada uma como régua:
+
+- **A:** Qwen-14B sozinho (linha de base)
+- **B:** 14B + 1,5B ajustado escrevendo o plano de testes
+- **C:** sem a etapa do plano de testes (**ablação**)
+
+| Configuração | Fáceis (15) | Difíceis (10) | Total (25), IC 95% |
+|---|---|---|---|
+| A: 14B sozinho | 15 | 7 | **22 (88%)**, IC 72 a 100 |
+| B: 14B + 1,5B treinado | 12 | 6 | **18 (72%)**, IC 52 a 88 |
+| C: sem plano de testes | 14 | 7 | **21 (84%)**, IC 68 a 96 |
+
+Uma execução por configuração, 75 execuções no total, sem nenhum erro de infraestrutura (detalhes e por tipo de tarefa em [`experiments/resultados/nivel2/`](experiments/resultados/nivel2/)).
+
+- **O híbrido ficou abaixo do 14B sozinho:** B − A = **−16 pontos** (IC 95% pareado por tarefa: −32 a −4, o intervalo não contém zero). O ganho do Nível 1 **não** virou ganho no agente.
+- **A ablação:** sem o plano de testes (C) o agente acertou 4 pontos a menos que o A (IC −16 a +8, contém zero). Com o 14B, essa etapa contribui pouco.
+- **O que os planos mostram** (o plano final gravado em cada execução, pontuado pelo oráculo): os planos do B tinham mais valores errados (64,6% corretos contra 77,9% no A; 8 de 25 planos sem nenhum erro contra 16 de 25), e o B precisou de mais voltas (23,4 contra 17,6) e acertou de primeira menos vezes (44% contra 64%). **Mas o plano não explica tudo:** 3 das 8 tarefas do B com plano sem erro também falharam, e o A falhou em 2 de 9 tarefas com plano errado. Um exemplo concreto está no `palíndromo` do B: o 1,5B esperou `True` para uma frase com vírgulas que a spec não cobre, o 14B reprovou o plano três vezes e o agente seguiu com ele até esgotar os reparos.
+- **Ressalvas:** só uma execução por configuração (a Parte 1 mediu até 20 pontos de ruído entre rodadas) e os tempos por tarefa não são comparáveis, porque as três configurações rodaram juntas no mesmo servidor.
+
+### Reproduzir
+`pip install -e ".[dev]"`; o treino roda nos notebooks do Colab com a pasta `datasets/plano_de_testes/` (o notebook lê `exemplos_*.jsonl` e `entradas_reais.json`) e instala `peft` sozinho. A avaliação e a geração do dataset estão em [experiments/README.md](experiments/README.md). Os pesos dos adaptadores não estão no repositório.
+
+## 13. Estrutura do repositório
 
 ```
 src/minicode/   código do agente (agent, llm, spec, tools, safety, tracing, cli)
@@ -323,10 +378,10 @@ tests/          testes do MiniCode (não chamam a LLM)
 examples/       projetos de demonstração para o modo interativo
 eval_tasks/     tarefas de avaliação com verificadores ocultos e o executor
 docs/           arquitetura detalhada
-experiments/    (Parte 2)
-datasets/       (Parte 2)
-notebooks/      (Parte 2)
+experiments/    Parte 2: oráculo, avaliação (Nível 1 e 2), pipeline do dataset, resultados (ver experiments/README.md)
+datasets/       Parte 2: o dataset do plano de testes (754 / 79 / 80 exemplos)
+notebooks/      Parte 2: treino LoRA no Colab (train.ipynb e train_checkpoints.ipynb)
 ```
 
-## 13. Uso de IA
+## 14. Uso de IA
 Ver [AI_USAGE.md](AI_USAGE.md).
