@@ -1,0 +1,8 @@
+{
+  "comentario": "Exercícios do teste sintético, lidos à mão (por nome da função/classe). Congelados para a divisão não mudar quando o dataset é reconstruído.",
+  "nomes": ["Editor", "extrair_campos", "desvio_padrao", "AnaliseCabecalhosHTTP", "serializar_registros", "calcular_pontuacao_base", "validar_dados", "ContadorPares", "FilaPrioridade", "mesclar_ambientes", "agrupar_vendas_por_mes", "rotacionar_esquerda",
+            "calcular_ingresso", "graus_para_rad", "ranking_empates", "calcular_prazo_entrega", "vencedor_dados", "validar_arquivo", "construir_histograma", "adicionar_registro", "classificar_status", "vencimentos_por_mes", "rot13", "CalculadoraJuros", "classificar_triangulo", "PlacarBasquete", "DepreciacaoBem", "extrair_iniciais",
+            "merge_dicts", "numero_por_extenso", "calcular_nivel_experiencia", "Estoque", "calcular_pontos_nivel", "FilaMensagens", "VersionamentoConfig", "HistogramaMetricas", "_parse_media_range", "divisores_primos", "pode_avancar_estado_pedido", "calcular_pontos", "validar_dependencias", "ConversorNumeralRomano", "Idade", "extrair_diagonal_principal",
+            "Particao", "extenso", "pontuacao_final", "LeitorLinhaCSV", "OrdenadorMultiChave", "normalizar_vendas", "calcula_frete", "calcular_total", "eh_armstrong", "SequenciaVariada", "ComissaoVendas", "contar_palavras_e_frases", "Classificacao", "Conta", "RaizPotencia", "Matricula",
+            "ConfigCamadas", "aplicar_evento", "matricula_aluno", "calcular_pagamento", "StatusHTTP", "ConfiguracaoCamadas", "pares_na_faixa", "disparar_tiros", "normalizar_cpf", "VersaoConfiguracao", "CabecalhoHTTP", "para_moeda", "LimpadorTexto"]
+}
