@@ -22,7 +22,7 @@ from pathlib import Path
 
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
-sys.path.insert(0, str(AQUI.parent / "eval_tasks"))
+sys.path.insert(0, str(AQUI.parents[1] / "eval_tasks"))
 
 import tarefas_dificeis
 import tarefas_faceis

@@ -1,10 +1,10 @@
 """Auditoria manual dos casos "inavaliáveis" do Nível 1: prepara a lista para leitura e junta os vereditos.
 
-  python experiments/auditar_inavaliaveis.py preparar
+  python experiments/nivel1/auditar_inavaliaveis.py preparar
       monta nivel1/inavaliaveis_para_ler.jsonl (um caso por linha, com tudo que precisa para julgar)
-  python experiments/auditar_inavaliaveis.py mostrar A B
+  python experiments/nivel1/auditar_inavaliaveis.py mostrar A B
       imprime os casos A a B-1
-  python experiments/auditar_inavaliaveis.py resumo
+  python experiments/nivel1/auditar_inavaliaveis.py resumo
       conta os vereditos gravados em nivel1/inavaliaveis_vereditos.json
 
 Veredito de cada caso (uma letra):
@@ -25,11 +25,12 @@ from pathlib import Path
 
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
-sys.path.insert(0, str(AQUI.parent / "src"))
+sys.path.insert(0, str(AQUI.parent / "gabarito"))   # oraculo.py
+sys.path.insert(0, str(AQUI.parents[1] / "src"))
 import avaliar_nivel1 as n1
 import oraculo
 
-PASTA = AQUI / "execucoes" / "nivel1"
+PASTA = AQUI.parent / "execucoes" / "nivel1"
 ARQ = PASTA / "inavaliaveis_para_ler.jsonl"
 VEREDITOS = PASTA / "inavaliaveis_vereditos.json"
 
@@ -80,12 +81,12 @@ def nomes_usados_e_inexistentes(entrada, definidos_simples):
 
 def preparar():
     # junta todos os casos "inavaliavel" dos três modelos, cada um com as pistas para julgar
-    entradas = n1.entradas_reais(AQUI / "execucoes" / "diagnostico_14b")
+    entradas = n1.entradas_reais(AQUI.parent / "execucoes" / "diagnostico_14b")
     reg = {
         r["id"]: r
         for r in (
             json.loads(l)
-            for l in open(AQUI.parent / "datasets" / "plano_de_testes" / "registros_teste.jsonl", encoding="utf-8")
+            for l in open(AQUI.parents[1] / "datasets" / "plano_de_testes" / "registros_teste.jsonl", encoding="utf-8")
         )
     }
     linhas, idx = [], 0

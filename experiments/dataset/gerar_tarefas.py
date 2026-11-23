@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 AQUI = Path(__file__).resolve().parent
-sys.path.insert(0, str(AQUI.parent))
+sys.path.insert(0, str(AQUI.parent / "gabarito"))   # oraculo.py
 sys.path.insert(0, str(AQUI))
 
 import oraculo

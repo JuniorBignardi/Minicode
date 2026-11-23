@@ -1,7 +1,7 @@
 """Liga o Nível 1 ao Nível 2: o plano de testes que o agente REALMENTE usou em cada execução, pontuado pelo oráculo,
 e o resultado da tarefa. Responde: quando o plano tinha valores errados, o agente falhou mais?
 
-Uso: python experiments/analise_nivel2_planos.py <pasta_do_nivel2> [saida.md]
+Uso: python experiments/nivel2/analise_nivel2_planos.py <pasta_do_nivel2> [saida.md]
 Lê <pasta>/<A|B|C>_r<n>_<facil|dificil>/tarefa_NN/.minicode/test_plan.md (o plano final gravado pelo agente) e resultados.json.
 """
 import json
@@ -11,6 +11,7 @@ from pathlib import Path
 
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
+sys.path.insert(0, str(AQUI.parent / "gabarito"))   # oraculo.py
 import oraculo
 
 # um caso do test_plan.md: "1. Critério: ...", depois "- entrada: ..." e "- esperado: ..."

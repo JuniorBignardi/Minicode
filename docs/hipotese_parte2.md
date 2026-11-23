@@ -30,7 +30,7 @@ Conclusão: o ponto onde o erro nasce é o **plano de testes** (os valores esper
 
 ## 4. Como será medido
 
-- **Oráculo:** cada caso (`entrada`, `esperado`) é executado na solução de referência da tarefa. O caso é **correto** se o valor da referência é igual ao esperado, **errado** se é diferente, **inavaliável** se a referência não consegue executar a entrada. A comparação é a do `oraculo.py` da Parte 2 (a mesma que gerou os 38% acima).
+- **Oráculo:** cada caso (`entrada`, `esperado`) é executado na solução de referência da tarefa. O caso é **correto** se o valor da referência é igual ao esperado, **errado** se é diferente, **inavaliável** se a referência não consegue executar a entrada. A comparação é a de `experiments/gabarito/oraculo.py`, da Parte 2 (a mesma que gerou os 38% acima).
 - **Métrica principal:** fração de casos avaliáveis com valor esperado correto.
 - **Métricas secundárias:** fração de planos válidos (JSON válido e todos os critérios cobertos), fração de casos inavaliáveis, e fração de tarefas com todos os casos corretos.
 - **Conjuntos de teste (nunca usados no treino nem na escolha de hiperparâmetros):**

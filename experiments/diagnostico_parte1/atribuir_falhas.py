@@ -16,7 +16,7 @@ from pathlib import Path
 
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
-sys.path.insert(0, str(AQUI.parent))   # experiments/ (oraculo)
+sys.path.insert(0, str(AQUI.parent / "gabarito"))   # oraculo.py
 
 import oraculo
 

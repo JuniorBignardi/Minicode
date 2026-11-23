@@ -4,7 +4,7 @@ NOTA: a avaliação feita no Colab (sem JSON Schema) foi descartada; a avaliaç�
 Do que há neste arquivo, só `pontuar_sintetico` ainda é usado (por avaliar_endpoint.py). O restante (main e
 interpretar_leniente) ficou como registro e não faz parte dos resultados finais.
 
-Uso: python experiments/avaliar_resultado_colab.py <resultado.json> <saida_prefixo>
+Uso: python experiments/nivel1/avaliar_resultado_colab.py <resultado.json> <saida_prefixo>
 Teste real: os 60 prompts das 25 tarefas (referência da tarefa como oráculo).
 Teste sintético: os exercícios de exemplos_teste.jsonl (referência de cada exercício).
 Cada caso é executado na referência: correto, errado ou inavaliável. Métrica: corretos / (corretos + errados).
@@ -16,14 +16,15 @@ import tempfile
 from pathlib import Path
 
 AQUI = Path(__file__).resolve().parent
-RAIZ = AQUI.parent
+RAIZ = AQUI.parents[1]
 sys.path.insert(0, str(AQUI))
+sys.path.insert(0, str(AQUI.parent / "gabarito"))   # oraculo.py
 sys.path.insert(0, str(RAIZ / "src"))
 import avaliar_nivel1 as n1
 import oraculo
 from minicode.spec.plano_de_testes import criterios_da_spec, validar_plano_de_testes
 
-DADOS = AQUI.parent / "datasets" / "plano_de_testes"   # o dataset versionado no repositório
+DADOS = AQUI.parents[1] / "datasets" / "plano_de_testes"   # o dataset versionado no repositório
 V3 = DADOS
 
 
@@ -64,7 +65,7 @@ def main():
     prefixo = sys.argv[2]
 
     # confere que os prompts do Colab são os mesmos dos logs da Parte 1
-    entradas = n1.entradas_reais(AQUI / "execucoes" / "diagnostico_14b")
+    entradas = n1.entradas_reais(AQUI.parent / "execucoes" / "diagnostico_14b")
     guardadas = json.load(open(DADOS / "entradas_reais.json", encoding="utf-8"))
     assert len(entradas) == len(guardadas) == len(res["real_ajustado"]), (
         len(entradas), len(guardadas), len(res["real_ajustado"])

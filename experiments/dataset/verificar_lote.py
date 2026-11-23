@@ -11,7 +11,7 @@ from pathlib import Path
 AQUI = Path(__file__).resolve().parent
 RAIZ = AQUI.parents[1]
 sys.path.insert(0, str(AQUI))
-sys.path.insert(0, str(AQUI.parent))
+sys.path.insert(0, str(AQUI.parent / "gabarito"))   # oraculo.py
 sys.path.insert(0, str(RAIZ / "src"))
 import gerar_v3
 

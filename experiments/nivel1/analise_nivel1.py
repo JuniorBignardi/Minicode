@@ -1,6 +1,6 @@
 """Análise estatística do Nível 1, sobre as saídas já gravadas (nada é gerado de novo).
 
-Uso: python experiments/analise_nivel1.py [pasta_nivel1]
+Uso: python experiments/nivel1/analise_nivel1.py [pasta_nivel1]
 
 Duas métricas, porque a nota depende de como se tratam os casos que não dá para julgar:
   A (a pré-definida): corretos / (corretos + errados). Casos inavaliáveis e planos ilegíveis ficam FORA do denominador.
@@ -18,7 +18,7 @@ import random
 import sys
 from pathlib import Path
 
-PASTA = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent / "execucoes" / "nivel1"
+PASTA = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parent.parent / "execucoes" / "nivel1"
 
 # nome mostrado na análise -> prefixo dos arquivos em PASTA
 MODELOS = {

@@ -4,7 +4,7 @@ from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "experiments" / "dataset"))
-sys.path.insert(0, str(RAIZ / "experiments"))
+sys.path.insert(0, str(RAIZ / "experiments" / "gabarito"))
 
 import gerar_tarefas  # noqa: E402
 

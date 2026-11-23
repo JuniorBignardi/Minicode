@@ -4,12 +4,23 @@ Tudo o que gera o dataset, treina a avaliação e mede os modelos. O treino em s
 
 ## O que cada pasta tem
 
-| Caminho | Para quê |
+```
+experiments/
+├── gabarito/              o oráculo e as soluções de referência (usados por todo o resto)
+├── nivel1/                avaliação da função isolada (o plano de testes escrito por um modelo)
+├── nivel2/                avaliação do agente completo (configurações A, B e C)
+├── dataset/               o pipeline que gerou o dataset
+├── diagnostico_parte1/    a análise de erros da Parte 1 que motivou a hipótese
+├── gerar_resultados_md.py gera docs/RESULTADOS.md e docs/RESULTADOS_DETALHADO.md
+├── resultados/            os resultados versionados
+└── execucoes/             saídas brutas (não vai para o git)
+```
+
+| Pasta | Arquivos e para quê |
 |---|---|
-| `oraculo.py`, `referencias_faceis.py`, `referencias_dificeis.py`, `validar_referencias.py` | **O oráculo.** Executa cada caso de teste na solução de referência da tarefa e diz se o valor esperado está certo, errado ou não é avaliável. As referências das 25 tarefas foram validadas contra os verificadores ocultos da Parte 1 |
-| `avaliar_nivel1.py`, `avaliar_endpoint.py`, `avaliar_resultado_colab.py` | **Nível 1** (a função sozinha): mandam os prompts a um modelo e pontuam os planos de testes com o oráculo |
-| `analise_nivel1.py`, `auditar_inavaliaveis.py` | Análise estatística pareada (bootstrap por tarefa) e auditoria manual dos casos "inavaliáveis" |
-| `nivel2.py` | **Nível 2** (o agente completo): roda o MiniCode nas 25 tarefas nas configurações A, B e C e resume o TaskSuccessRate |
+| `gabarito/` | **O oráculo.** `oraculo.py` executa cada caso de teste na solução de referência da tarefa e diz se o valor esperado está certo, errado ou não é avaliável. `referencias_faceis.py` e `referencias_dificeis.py` têm as soluções de referência; `validar_referencias.py` confere que elas passam nos verificadores ocultos da Parte 1 |
+| `nivel1/` | **Nível 1** (a função sozinha). `avaliar_endpoint.py` manda os prompts a um modelo servido por API; `avaliar_nivel1.py` lê a resposta, chama o oráculo e calcula a métrica; `avaliar_resultado_colab.py` pontua o teste sintético; `analise_nivel1.py` faz as comparações pareadas (bootstrap por tarefa); `auditar_inavaliaveis.py` apoia a leitura manual dos casos "inavaliáveis" |
+| `nivel2/` | **Nível 2** (o agente completo). `nivel2.py` roda o MiniCode nas 25 tarefas nas configurações A, B e C e resume o TaskSuccessRate; `analise_nivel2_planos.py` compara os planos de testes usados |
 | `dataset/` | O pipeline que gerou o dataset: professores, filtros, montagem, segundo solucionador e auditoria (ver abaixo). `montar_dataset.py` montou os 687 exemplos originais; `gerar_v3.py` gerou os 67 do Qwen cloud |
 | `diagnostico_parte1/` | A análise dos erros do Qwen-14B na Parte 1, que motivou a hipótese (os 38% de valores esperados errados) |
 | `resultados/` | **Os resultados versionados** (ver [`resultados/README.md`](resultados/README.md)) |
@@ -21,9 +32,9 @@ Pré-requisitos: `pip install -e ".[dev]"` na raiz, e um endpoint compatível co
 
 **Nível 1: um modelo, as 140 entradas (60 reais e 80 sintéticas), com JSON Schema e temperatura 0,3**
 ```
-python experiments/avaliar_endpoint.py <url_base>/v1 <modelo> <nome> --schema
-python experiments/avaliar_endpoint.py <url_base>/v1 <modelo> <nome> --schema --exemplos 2     # com 2 exemplos do treino no prompt
-python experiments/analise_nivel1.py experiments/resultados/nivel1                              # comparações pareadas e sensibilidade
+python experiments/nivel1/avaliar_endpoint.py <url_base>/v1 <modelo> <nome> --schema
+python experiments/nivel1/avaliar_endpoint.py <url_base>/v1 <modelo> <nome> --schema --exemplos 2     # com 2 exemplos do treino no prompt
+python experiments/nivel1/analise_nivel1.py experiments/resultados/nivel1                              # comparações pareadas e sensibilidade
 ```
 O script grava, em `experiments/execucoes/nivel1/`, a chamada completa (prompt, parâmetros, resposta, tokens), a nota de cada caso e o resumo. Se cair no meio, rodar de novo continua de onde parou. Sem os logs da Parte 1, os 60 prompts reais vêm de `datasets/plano_de_testes/entradas_reais.json`.
 
@@ -32,8 +43,8 @@ O script grava, em `experiments/execucoes/nivel1/`, a chamada completa (prompt, 
 # o 14B (como na Parte 1) e, para a configuração B, o modelo especializado:
 export MINICODE_API_BASE=<url do 14B>/v1 MINICODE_API_KEY=ollama MINICODE_MODEL=qwen2.5:14b
 export MINICODE_PLAN_API_BASE=<url do 1,5B>/v1 MINICODE_PLAN_MODEL=<nome do adaptador>
-python experiments/nivel2.py rodar experiments/execucoes/nivel2 --repeticoes 1 --paralelo 3
-python experiments/nivel2.py resumo experiments/execucoes/nivel2
+python experiments/nivel2/nivel2.py rodar experiments/execucoes/nivel2 --repeticoes 1 --paralelo 3
+python experiments/nivel2/nivel2.py resumo experiments/execucoes/nivel2
 ```
 Configurações: **A** = Qwen-14B sozinho; **B** = o 1,5B ajustado escreve a primeira versão do plano de testes e o 14B faz o resto; **C** = sem a etapa do plano de testes (ablação). A ablação também pode ser pedida diretamente com `MINICODE_ABLACAO="planejar_testes=False"`.
 

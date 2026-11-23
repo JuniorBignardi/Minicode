@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(RAIZ / "experiments"))
+sys.path.insert(0, str(RAIZ / "experiments" / "gabarito"))
 
 import oraculo  # noqa: E402
 

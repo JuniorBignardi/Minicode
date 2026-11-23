@@ -56,7 +56,7 @@ MINICODE_ABLACAO="planejar_testes=False" python eval_tasks/rodar_facil.py /saida
 MINICODE_PLAN_API_BASE=<url>/v1 MINICODE_PLAN_MODEL=<modelo> python eval_tasks/rodar_facil.py /saida   # o modelo especializado escreve o plano
 ```
 
-Para rodar as três configurações (A, B e C) com repetições e resumo estatístico, use `experiments/nivel2.py` (ver `experiments/README.md`).
+Para rodar as três configurações (A, B e C) com repetições e resumo estatístico, use `experiments/nivel2/nivel2.py` (ver `experiments/README.md`).
 
 ## Cuidados com a interpretação
 

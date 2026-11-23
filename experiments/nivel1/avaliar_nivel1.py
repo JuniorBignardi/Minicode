@@ -1,9 +1,9 @@
 """Nível 1: o plano de testes que um modelo escreve, conferido pelo oráculo (a solução de referência de cada tarefa).
 
 Uso:
-  python experiments/avaliar_nivel1.py baseline <pasta_dos_resultados_do_14b> [saida.json]
+  python experiments/nivel1/avaliar_nivel1.py baseline <pasta_dos_resultados_do_14b> [saida.json]
       o Qwen 14B da Parte 1, pelas respostas gravadas nos logs das 60 execuções
-  python experiments/avaliar_nivel1.py endpoint <pasta_dos_resultados_do_14b> <url_base> <modelo> [saida.json]
+  python experiments/nivel1/avaliar_nivel1.py endpoint <pasta_dos_resultados_do_14b> <url_base> <modelo> [saida.json]
       um modelo servido por uma API compatível com a da OpenAI (chave em MINICODE_API_KEY, se precisar)
 
 As entradas do teste são os prompts REAIS que o agente mandou ao 14B na etapa do plano de testes
@@ -21,13 +21,14 @@ from pathlib import Path
 
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
-sys.path.insert(0, str(AQUI.parent / "src"))
+sys.path.insert(0, str(AQUI.parent / "gabarito"))   # oraculo.py
+sys.path.insert(0, str(AQUI.parents[1] / "src"))
 
 import oraculo
 from minicode.spec.plano_de_testes import criterios_da_spec, interpretar_plano_de_testes, validar_plano_de_testes
 
 
-PROMPTS_VERSIONADOS = AQUI.parent / "datasets" / "plano_de_testes" / "entradas_reais.json"
+PROMPTS_VERSIONADOS = AQUI.parents[1] / "datasets" / "plano_de_testes" / "entradas_reais.json"
 
 
 # ---------- as entradas: os prompts reais da Parte 1 ----------

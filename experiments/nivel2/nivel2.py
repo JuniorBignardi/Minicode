@@ -9,8 +9,8 @@ Cada (configuração, repetição, conjunto) roda um executor da Parte 1 (eval_t
 como subprocesso, então a medição é a mesma da Parte 1: o verificador oculto de cada tarefa decide se está correta.
 
 Uso:
-  python experiments/nivel2.py rodar  <pasta_de_saida> --repeticoes 3 [--configs A B C] [--conjuntos facil dificil] [--tarefas 1 2 3] [--paralelo 3]
-  python experiments/nivel2.py resumo <pasta_de_saida>
+  python experiments/nivel2/nivel2.py rodar  <pasta_de_saida> --repeticoes 3 [--configs A B C] [--conjuntos facil dificil] [--tarefas 1 2 3] [--paralelo 3]
+  python experiments/nivel2/nivel2.py resumo <pasta_de_saida>
 
 Variáveis de ambiente (nenhuma chave é impressa):
   MINICODE_API_BASE, MINICODE_API_KEY, MINICODE_MODEL     o 14B (como na Parte 1)
@@ -29,7 +29,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-RAIZ = Path(__file__).resolve().parent.parent
+RAIZ = Path(__file__).resolve().parents[2]
 EXECUTORES = {"facil": RAIZ / "eval_tasks" / "rodar_facil.py", "dificil": RAIZ / "eval_tasks" / "rodar_dificil.py"}
 NOMES = {"A": "A: 14B sozinho", "B": "B: 14B + 1,5B ajustado no plano de testes", "C": "C: sem plano de testes (ablação)"}
 

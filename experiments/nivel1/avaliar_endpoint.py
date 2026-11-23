@@ -1,7 +1,7 @@
 """Nível 1 por endpoint: um modelo servido por API (Ollama, vLLM) escreve o plano de testes dos prompts reais
 e do teste sintético, e o oráculo pontua.
 
-Uso: python experiments/avaliar_endpoint.py <url_base> <modelo> <nome> [--schema] [--exemplos N] [--threads 3] [--so real|sintetico]
+Uso: python experiments/nivel1/avaliar_endpoint.py <url_base> <modelo> <nome> [--schema] [--exemplos N] [--threads 3] [--so real|sintetico]
   --schema      pede a resposta no formato JSON Schema do plano de testes, como o agente faz, com temperatura 0,3.
                 Sem a flag: sem schema e temperatura 0.
   --exemplos N  põe N exemplos fixos do TREINO (os N primeiros do arquivo) como mensagens de exemplo (few-shot).
@@ -28,14 +28,15 @@ from pathlib import Path
 
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
-sys.path.insert(0, str(AQUI.parent / "src"))
+sys.path.insert(0, str(AQUI.parent / "gabarito"))   # oraculo.py
+sys.path.insert(0, str(AQUI.parents[1] / "src"))
 import avaliar_nivel1 as n1
 import avaliar_resultado_colab as colab
 from minicode.llm.esquema import formato_da_resposta
 from minicode.spec.plano_de_testes import criterios_da_spec, esquema_plano_de_testes
 
-DADOS = AQUI.parent / "datasets" / "plano_de_testes"   # o dataset versionado no repositório
-SAIDA = AQUI / "execucoes" / "nivel1"
+DADOS = AQUI.parents[1] / "datasets" / "plano_de_testes"   # o dataset versionado no repositório
+SAIDA = AQUI.parent / "execucoes" / "nivel1"
 
 
 def com_exemplos(mensagens, exemplos):
@@ -66,7 +67,7 @@ def main():
 
     # os 60 prompts reais; confere que são os mesmos dos logs da Parte 1
     guardadas = json.load(open(DADOS / "entradas_reais.json", encoding="utf-8"))
-    entradas = n1.entradas_reais(AQUI / "execucoes" / "diagnostico_14b")
+    entradas = n1.entradas_reais(AQUI.parent / "execucoes" / "diagnostico_14b")
     assert len(entradas) == len(guardadas) and all(x["mensagens"] == y["mensagens"] for x, y in zip(entradas, guardadas))
 
     # os exercícios do teste sintético (com a referência de cada um) e os exemplos fixos do treino (few-shot)

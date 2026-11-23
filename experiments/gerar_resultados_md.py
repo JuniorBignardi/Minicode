@@ -14,7 +14,7 @@ AQUI = Path(__file__).resolve().parent
 RAIZ = AQUI.parent
 R = AQUI / "resultados"
 sys.argv = [sys.argv[0], str(R / "nivel1")]   # o analise_nivel1 lê a pasta pelo argv
-sys.path.insert(0, str(AQUI))
+sys.path.insert(0, str(AQUI / "nivel1"))
 import analise_nivel1 as an
 
 # nome de cada modelo nas tabelas (a chave é o prefixo dos arquivos em resultados/nivel1/)
@@ -161,7 +161,7 @@ def sem_ambiguos():
 
 
 # ---------------------------------------------------------------------------------------------
-# Nível 2: reaproveita o texto que experiments/nivel2.py já gerou
+# Nível 2: reaproveita o texto que experiments/nivel2/nivel2.py já gerou
 # ---------------------------------------------------------------------------------------------
 
 def nivel2():

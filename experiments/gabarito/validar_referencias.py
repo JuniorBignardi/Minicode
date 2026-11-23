@@ -1,6 +1,6 @@
 """Confere cada solução de referência contra o verificador oculto e o teste original da tarefa.
 
-Uso:  python experiments/validar_referencias.py
+Uso:  python experiments/gabarito/validar_referencias.py
 Uma referência só serve de oráculo se passar aqui. Sem as referências o verificador deve reprovar
 (controle negativo), senão ele não distingue o código certo do errado.
 """
@@ -12,7 +12,7 @@ from pathlib import Path
 
 AQUI = Path(__file__).resolve().parent
 sys.path.insert(0, str(AQUI))
-sys.path.insert(0, str(AQUI.parent / "eval_tasks"))
+sys.path.insert(0, str(AQUI.parents[1] / "eval_tasks"))
 
 import tarefas_dificeis
 import tarefas_faceis
