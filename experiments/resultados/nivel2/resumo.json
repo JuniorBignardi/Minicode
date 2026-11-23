@@ -1,0 +1,46 @@
+{
+ "A": {
+  "execucoes": 25,
+  "erros_de_infra": 0,
+  "task_success_rate": 0.88,
+  "ic95": [
+   0.72,
+   1.0
+  ],
+  "first_attempt": 0.64
+ },
+ "B": {
+  "execucoes": 25,
+  "erros_de_infra": 0,
+  "task_success_rate": 0.72,
+  "ic95": [
+   0.52,
+   0.88
+  ],
+  "first_attempt": 0.44
+ },
+ "C": {
+  "execucoes": 25,
+  "erros_de_infra": 0,
+  "task_success_rate": 0.84,
+  "ic95": [
+   0.68,
+   0.96
+  ],
+  "first_attempt": 0.64
+ },
+ "B_menos_A": {
+  "diferenca": -16.000000000000004,
+  "ic95": [
+   -0.31999999999999995,
+   -0.039999999999999925
+  ]
+ },
+ "C_menos_A": {
+  "diferenca": -4.0000000000000036,
+  "ic95": [
+   -0.16000000000000003,
+   0.08000000000000007
+  ]
+ }
+}

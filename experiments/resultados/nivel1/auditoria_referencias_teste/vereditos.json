@@ -1,0 +1,322 @@
+{
+ "0": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "1": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "2": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "3": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "4": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "5": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "6": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "7": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "8": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "9": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "10": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "11": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "12": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "13": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "14": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "15": {
+  "veredito": "amb",
+  "nota": "caso 10: pendentes() depois de desenfileirar sem confirmar; o pedido diz 'ainda nao confirmadas' mas a referencia devolve []"
+ },
+ "16": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "17": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "18": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "19": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "20": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "21": {
+  "veredito": "ok",
+  "nota": "pedido mal formulado (contas so tem o dia), mas a spec define que devolve todas"
+ },
+ "22": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "23": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "24": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "25": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "26": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "27": {
+  "veredito": "amb",
+  "nota": "caso 1: a referencia nao termina em quebra de linha; 'uma linha por registro' tambem admite terminar com \\n"
+ },
+ "28": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "29": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "30": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "31": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "32": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "33": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "34": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "35": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "36": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "37": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "38": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "39": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "40": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "41": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "42": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "43": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "44": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "45": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "46": {
+  "veredito": "amb",
+  "nota": "o metodo adicionar e o atributo itens nao sao nomeados no pedido nem na spec; todos os casos dependem deles"
+ },
+ "47": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "48": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "49": {
+  "veredito": "ok",
+  "nota": "codigos 100-199 nao definidos no pedido (a referencia devolve Outro), mas nenhum caso os usa"
+ },
+ "50": {
+  "veredito": "amb",
+  "nota": "caso 5: o formato de listar_alunos (pares nome,nota) nao esta definido no pedido nem na spec"
+ },
+ "51": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "52": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "53": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "54": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "55": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "56": {
+  "veredito": "ok",
+  "nota": "referencia usa 'tres' sem acento e 'catorze', mas nenhum caso exercita 3 nem 14 (risco latente)"
+ },
+ "57": {
+  "veredito": "amb",
+  "nota": "o nome do metodo (limpar) e o tipo do retorno (string) nao estao no pedido nem na spec; todos os 9 casos dependem disso"
+ },
+ "58": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "59": {
+  "veredito": "amb",
+  "nota": "os metodos obter, contem e nomes nao sao nomeados no pedido nem na spec; 7 dos 10 casos dependem deles"
+ },
+ "60": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "61": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "62": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "63": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "64": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "65": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "66": {
+  "veredito": "ok",
+  "nota": "o pedido descreve a formula do digito de forma confusa, mas a referencia segue a regra padrao do CPF (11 - resto, 0 se resto<2)"
+ },
+ "67": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "68": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "69": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "70": {
+  "veredito": "amb",
+  "nota": "a assinatura de matricula_aluno (turma, matricula, nome, notas) e a estrutura da turma nao estao no pedido; os 8 casos dependem disso. A media minima 6,0 do pedido nao e usada pela referencia (nenhum caso a testa)"
+ },
+ "71": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "72": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "73": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "74": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "75": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "76": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "77": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "78": {
+  "veredito": "ok",
+  "nota": ""
+ },
+ "79": {
+  "veredito": "ok",
+  "nota": ""
+ }
+}

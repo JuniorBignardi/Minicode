@@ -1,0 +1,32 @@
+{
+ "real": {
+  "prompts": 60,
+  "tarefas": 25,
+  "formato_ok": 1.0,
+  "planos_validos": 0.85,
+  "casos_corretos": 185,
+  "casos_errados": 89,
+  "casos_inavaliaveis": 20,
+  "fracao_correta": 0.6751824817518248,
+  "ic95": [
+   0.5774058577405857,
+   0.7657342657342657
+  ]
+ },
+ "sintetico": {
+  "prompts": 80,
+  "tarefas": 80,
+  "formato_ok": 0.975,
+  "planos_validos": 0.8875,
+  "casos_corretos": 404,
+  "casos_errados": 161,
+  "casos_inavaliaveis": 5,
+  "fracao_correta": 0.7150442477876107,
+  "ic95": [
+   0.6637931034482759,
+   0.7638640429338104
+  ]
+ },
+ "falhas_de_infraestrutura": 0,
+ "respostas_truncadas": 2
+}

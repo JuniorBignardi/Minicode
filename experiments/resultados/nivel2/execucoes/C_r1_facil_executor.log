@@ -1,0 +1,31 @@
+opções do agente: {'planejar_testes': False} | plano de testes: o mesmo modelo
+[01] implementar  fatorial             -> DONE   correto=True reparos=0 chamadas=13 72s {}
+[02] implementar  palindromo           -> DONE   correto=True reparos=0 chamadas=12 81s {}
+[03] implementar  fibonacci            -> DONE   correto=True reparos=0 chamadas=12 105s {}
+[04] implementar  contar palavras      -> DONE   correto=True reparos=0 chamadas=15 97s {}
+[05] bug          media                -> DONE   correto=True reparos=1 chamadas=20 152s {}
+[06] bug          maior de negativos   -> DONE   correto=True reparos=2 chamadas=17 131s {}
+[07] bug          eh_par invertido     -> DONE   correto=True reparos=1 chamadas=21 150s {}
+[08] api          saudacao formal      -> DONE   correto=True reparos=0 chamadas=10 82s {}
+[09] api          desconto             -> DONE   correto=True reparos=0 chamadas=12 87s {}
+[10] criar testes testes de estoque    -> DONE   correto=True reparos=1 chamadas=16 206s {}
+[11] criar testes testes de primo      -> DONE   correto=False reparos=0 chamadas=12 82s {}
+[12] validacao    criar_usuario        -> DONE   correto=True reparos=0 chamadas=11 105s {}
+[13] validacao    validar_email        -> DONE   correto=True reparos=0 chamadas=14 89s {}
+[14] refatorar    area reutiliza       -> DONE   correto=True reparos=0 chamadas=10 77s {}
+[15] refatorar    list comprehension   -> DONE   correto=True reparos=0 chamadas=17 104s {}
+
+===== MÉTRICAS =====
+tarefas concluídas (DONE, testes do agente passaram): 15/15
+TaskSuccessRate (corretas no verificador oculto):     14/15 = 93%
+FirstAttemptSuccess (corretas sem nenhum reparo):     10/15 = 67%
+AverageIterations:                                    14.1
+AverageLLMCalls:                                      14.1
+
+por tipo (corretas/total):
+  api            2/2
+  bug            3/3
+  criar testes   1/2
+  implementar    4/4
+  refatorar      2/2
+  validacao      2/2

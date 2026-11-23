@@ -1,0 +1,130 @@
+[
+  {
+    "id": 1,
+    "tipo": "varios arquivos",
+    "nome": "remover usuario (repo + servico)",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 18,
+    "iteracoes": 18,
+    "segundos": 139,
+    "problemas": {
+      "limite_de_leituras": 1
+    }
+  },
+  {
+    "id": 2,
+    "tipo": "bug sutil",
+    "nome": "mesclar intervalos",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 10,
+    "iteracoes": 10,
+    "segundos": 114,
+    "problemas": {}
+  },
+  {
+    "id": 3,
+    "tipo": "classe com estado",
+    "nome": "carrinho",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 13,
+    "iteracoes": 13,
+    "segundos": 159,
+    "problemas": {
+      "limite_de_leituras": 1
+    }
+  },
+  {
+    "id": 4,
+    "tipo": "arquivos",
+    "nome": "contar linhas e palavras",
+    "estado": "DONE",
+    "correto": false,
+    "reparos": 0,
+    "chamadas": 9,
+    "iteracoes": 9,
+    "segundos": 112,
+    "problemas": {}
+  },
+  {
+    "id": 5,
+    "tipo": "usa codigo existente",
+    "nome": "perimetro",
+    "estado": "FAILED",
+    "correto": false,
+    "reparos": 3,
+    "chamadas": 25,
+    "iteracoes": 25,
+    "segundos": 246,
+    "problemas": {}
+  },
+  {
+    "id": 6,
+    "tipo": "refatorar",
+    "nome": "arredondar_moeda",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 12,
+    "iteracoes": 12,
+    "segundos": 119,
+    "problemas": {}
+  },
+  {
+    "id": 7,
+    "tipo": "modificar API",
+    "nome": "filtros em listar",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 12,
+    "iteracoes": 12,
+    "segundos": 183,
+    "problemas": {}
+  },
+  {
+    "id": 8,
+    "tipo": "validacao",
+    "nome": "validar_senha",
+    "estado": "FAILED",
+    "correto": false,
+    "reparos": 3,
+    "chamadas": 26,
+    "iteracoes": 26,
+    "segundos": 434,
+    "problemas": {}
+  },
+  {
+    "id": 9,
+    "tipo": "bug em classe",
+    "nome": "pilha",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 1,
+    "chamadas": 23,
+    "iteracoes": 23,
+    "segundos": 226,
+    "problemas": {
+      "escrita_protegida": 1
+    }
+  },
+  {
+    "id": 10,
+    "tipo": "texto",
+    "nome": "ler_csv",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 12,
+    "iteracoes": 12,
+    "segundos": 140,
+    "problemas": {
+      "acao_repetida": 1
+    }
+  }
+]

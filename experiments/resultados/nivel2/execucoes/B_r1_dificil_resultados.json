@@ -1,0 +1,124 @@
+[
+  {
+    "id": 1,
+    "tipo": "varios arquivos",
+    "nome": "remover usuario (repo + servico)",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 3,
+    "chamadas": 38,
+    "iteracoes": 38,
+    "segundos": 396,
+    "problemas": {}
+  },
+  {
+    "id": 2,
+    "tipo": "bug sutil",
+    "nome": "mesclar intervalos",
+    "estado": "FAILED",
+    "correto": false,
+    "reparos": 3,
+    "chamadas": 26,
+    "iteracoes": 26,
+    "segundos": 303,
+    "problemas": {}
+  },
+  {
+    "id": 3,
+    "tipo": "classe com estado",
+    "nome": "carrinho",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 3,
+    "chamadas": 29,
+    "iteracoes": 29,
+    "segundos": 454,
+    "problemas": {}
+  },
+  {
+    "id": 4,
+    "tipo": "arquivos",
+    "nome": "contar linhas e palavras",
+    "estado": "DONE",
+    "correto": false,
+    "reparos": 3,
+    "chamadas": 31,
+    "iteracoes": 31,
+    "segundos": 387,
+    "problemas": {}
+  },
+  {
+    "id": 5,
+    "tipo": "usa codigo existente",
+    "nome": "perimetro",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 1,
+    "chamadas": 20,
+    "iteracoes": 20,
+    "segundos": 339,
+    "problemas": {}
+  },
+  {
+    "id": 6,
+    "tipo": "refatorar",
+    "nome": "arredondar_moeda",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 19,
+    "iteracoes": 19,
+    "segundos": 290,
+    "problemas": {}
+  },
+  {
+    "id": 7,
+    "tipo": "modificar API",
+    "nome": "filtros em listar",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 18,
+    "iteracoes": 18,
+    "segundos": 343,
+    "problemas": {}
+  },
+  {
+    "id": 8,
+    "tipo": "validacao",
+    "nome": "validar_senha",
+    "estado": "FAILED",
+    "correto": false,
+    "reparos": 3,
+    "chamadas": 31,
+    "iteracoes": 31,
+    "segundos": 555,
+    "problemas": {}
+  },
+  {
+    "id": 9,
+    "tipo": "bug em classe",
+    "nome": "pilha",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 1,
+    "chamadas": 21,
+    "iteracoes": 21,
+    "segundos": 158,
+    "problemas": {}
+  },
+  {
+    "id": 10,
+    "tipo": "texto",
+    "nome": "ler_csv",
+    "estado": "DONE",
+    "correto": false,
+    "reparos": 3,
+    "chamadas": 39,
+    "iteracoes": 39,
+    "segundos": 441,
+    "problemas": {
+      "limite_de_leituras": 1
+    }
+  }
+]

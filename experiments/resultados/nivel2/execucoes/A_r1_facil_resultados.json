@@ -1,0 +1,186 @@
+[
+  {
+    "id": 1,
+    "tipo": "implementar",
+    "nome": "fatorial",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 16,
+    "iteracoes": 16,
+    "segundos": 102,
+    "problemas": {
+      "limite_de_leituras": 1
+    }
+  },
+  {
+    "id": 2,
+    "tipo": "implementar",
+    "nome": "palindromo",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 10,
+    "iteracoes": 10,
+    "segundos": 124,
+    "problemas": {}
+  },
+  {
+    "id": 3,
+    "tipo": "implementar",
+    "nome": "fibonacci",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 13,
+    "iteracoes": 13,
+    "segundos": 105,
+    "problemas": {}
+  },
+  {
+    "id": 4,
+    "tipo": "implementar",
+    "nome": "contar palavras",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 3,
+    "chamadas": 36,
+    "iteracoes": 36,
+    "segundos": 512,
+    "problemas": {}
+  },
+  {
+    "id": 5,
+    "tipo": "bug",
+    "nome": "media",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 21,
+    "iteracoes": 21,
+    "segundos": 139,
+    "problemas": {}
+  },
+  {
+    "id": 6,
+    "tipo": "bug",
+    "nome": "maior de negativos",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 1,
+    "chamadas": 15,
+    "iteracoes": 15,
+    "segundos": 115,
+    "problemas": {}
+  },
+  {
+    "id": 7,
+    "tipo": "bug",
+    "nome": "eh_par invertido",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 15,
+    "iteracoes": 15,
+    "segundos": 81,
+    "problemas": {}
+  },
+  {
+    "id": 8,
+    "tipo": "api",
+    "nome": "saudacao formal",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 15,
+    "iteracoes": 15,
+    "segundos": 158,
+    "problemas": {}
+  },
+  {
+    "id": 9,
+    "tipo": "api",
+    "nome": "desconto",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 12,
+    "iteracoes": 12,
+    "segundos": 128,
+    "problemas": {}
+  },
+  {
+    "id": 10,
+    "tipo": "criar testes",
+    "nome": "testes de estoque",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 13,
+    "iteracoes": 13,
+    "segundos": 99,
+    "problemas": {}
+  },
+  {
+    "id": 11,
+    "tipo": "criar testes",
+    "nome": "testes de primo",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 14,
+    "iteracoes": 14,
+    "segundos": 188,
+    "problemas": {}
+  },
+  {
+    "id": 12,
+    "tipo": "validacao",
+    "nome": "criar_usuario",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 14,
+    "iteracoes": 14,
+    "segundos": 116,
+    "problemas": {}
+  },
+  {
+    "id": 13,
+    "tipo": "validacao",
+    "nome": "validar_email",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 16,
+    "iteracoes": 16,
+    "segundos": 164,
+    "problemas": {}
+  },
+  {
+    "id": 14,
+    "tipo": "refatorar",
+    "nome": "area reutiliza",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 2,
+    "chamadas": 28,
+    "iteracoes": 28,
+    "segundos": 226,
+    "problemas": {
+      "escrita_protegida": 1
+    }
+  },
+  {
+    "id": 15,
+    "tipo": "refatorar",
+    "nome": "list comprehension",
+    "estado": "DONE",
+    "correto": true,
+    "reparos": 0,
+    "chamadas": 12,
+    "iteracoes": 12,
+    "segundos": 102,
+    "problemas": {}
+  }
+]

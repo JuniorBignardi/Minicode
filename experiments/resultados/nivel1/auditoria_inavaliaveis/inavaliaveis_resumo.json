@@ -1,0 +1,20 @@
+{
+ "leitura_manual": "355 casos lidos um a um",
+ "vereditos": {
+  "14B": {
+   "M": 128,
+   "H": 6,
+   "A": 0
+  },
+  "ajustado (3 épocas)": {
+   "M": 20,
+   "H": 6,
+   "A": 6
+  },
+  "base": {
+   "M": 183,
+   "H": 2,
+   "A": 4
+  }
+ }
+}

@@ -1,0 +1,30 @@
+opções do agente: configuração completa | plano de testes: o mesmo modelo
+[01] varios arquivos remover usuario (repo + servico) -> DONE   correto=True reparos=0 chamadas=21 221s {}
+[02] bug sutil    mesclar intervalos   -> DONE   correto=True reparos=1 chamadas=16 220s {}
+[03] classe com estado carrinho             -> DONE   correto=True reparos=0 chamadas=15 196s {}
+[04] arquivos     contar linhas e palavras -> DONE   correto=False reparos=0 chamadas=14 178s {}
+[05] usa codigo existente perimetro            -> DONE   correto=True reparos=1 chamadas=16 161s {}
+[06] refatorar    arredondar_moeda     -> DONE   correto=True reparos=1 chamadas=19 209s {}
+[07] modificar API filtros em listar    -> DONE   correto=True reparos=0 chamadas=17 240s {}
+[08] validacao    validar_senha        -> FAILED correto=False reparos=3 chamadas=33 482s {}
+[09] bug em classe pilha                -> DONE   correto=True reparos=0 chamadas=23 228s {'escrita_protegida': 1}
+[10] texto        ler_csv              -> DONE   correto=False reparos=0 chamadas=16 164s {'limite_de_leituras': 1}
+
+===== MÉTRICAS =====
+tarefas concluídas (DONE, testes do agente passaram): 9/10
+TaskSuccessRate (corretas no verificador oculto):     7/10 = 70%
+FirstAttemptSuccess (corretas sem nenhum reparo):     4/10 = 40%
+AverageIterations:                                    19.0
+AverageLLMCalls:                                      19.0
+
+por tipo (corretas/total):
+  arquivos       0/1
+  bug em classe  1/1
+  bug sutil      1/1
+  classe com estado 1/1
+  modificar API  1/1
+  refatorar      1/1
+  texto          0/1
+  usa codigo existente 1/1
+  validacao      0/1
+  varios arquivos 1/1

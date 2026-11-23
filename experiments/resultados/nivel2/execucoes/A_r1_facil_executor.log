@@ -1,0 +1,31 @@
+opções do agente: configuração completa | plano de testes: o mesmo modelo
+[01] implementar  fatorial             -> DONE   correto=True reparos=0 chamadas=16 102s {'limite_de_leituras': 1}
+[02] implementar  palindromo           -> DONE   correto=True reparos=0 chamadas=10 124s {}
+[03] implementar  fibonacci            -> DONE   correto=True reparos=0 chamadas=13 105s {}
+[04] implementar  contar palavras      -> DONE   correto=True reparos=3 chamadas=36 512s {}
+[05] bug          media                -> DONE   correto=True reparos=0 chamadas=21 139s {}
+[06] bug          maior de negativos   -> DONE   correto=True reparos=1 chamadas=15 115s {}
+[07] bug          eh_par invertido     -> DONE   correto=True reparos=0 chamadas=15 81s {}
+[08] api          saudacao formal      -> DONE   correto=True reparos=0 chamadas=15 158s {}
+[09] api          desconto             -> DONE   correto=True reparos=0 chamadas=12 128s {}
+[10] criar testes testes de estoque    -> DONE   correto=True reparos=0 chamadas=13 99s {}
+[11] criar testes testes de primo      -> DONE   correto=True reparos=0 chamadas=14 188s {}
+[12] validacao    criar_usuario        -> DONE   correto=True reparos=0 chamadas=14 116s {}
+[13] validacao    validar_email        -> DONE   correto=True reparos=0 chamadas=16 164s {}
+[14] refatorar    area reutiliza       -> DONE   correto=True reparos=2 chamadas=28 226s {'escrita_protegida': 1}
+[15] refatorar    list comprehension   -> DONE   correto=True reparos=0 chamadas=12 102s {}
+
+===== MÉTRICAS =====
+tarefas concluídas (DONE, testes do agente passaram): 15/15
+TaskSuccessRate (corretas no verificador oculto):     15/15 = 100%
+FirstAttemptSuccess (corretas sem nenhum reparo):     12/15 = 80%
+AverageIterations:                                    16.7
+AverageLLMCalls:                                      16.7
+
+por tipo (corretas/total):
+  api            2/2
+  bug            3/3
+  criar testes   2/2
+  implementar    4/4
+  refatorar      2/2
+  validacao      2/2
