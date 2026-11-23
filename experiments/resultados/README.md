@@ -6,7 +6,6 @@ Tudo aqui é saída gerada pelos scripts de `experiments/`, copiada de `experime
 |---|---|
 | `nivel1/` | O Nível 1 (a função sozinha) para 5 modelos: 14B, 1,5B base, 1,5B base com 2 exemplos, 1,5B ajustado (3 épocas) e 1,5B ajustado (melhor ponto). Todos com o mesmo prompt, JSON Schema e temperatura 0,3, nas mesmas 140 entradas (60 reais e 80 sintéticas). Cada modelo tem `*_respostas.jsonl` (prompt e resposta completos), `*_avaliacao.jsonl` (nota de cada caso) e `*_resumo.json`. `analise.md` traz as comparações pareadas |
 | `nivel1/auditoria_inavaliaveis/` | Leitura manual dos 355 casos que o oráculo não conseguiu julgar (14B, ajustado de 3 épocas e base): o veredito de cada um e o resumo |
-| `colab_sem_schema/` | As avaliações feitas no Colab **sem** JSON Schema, do treino 1 (`resultado_colab_*`) e do melhor ponto do treino 2 (`resultado_colab_treino2_melhor_ponto.json`, o conteúdo do bloco em base64 que estava no `train_checkpoints.ipynb`). Resultado secundário: ela mostrou que o 1,5B base não produz um plano legível sem o formato forçado, e por isso a comparação principal passou a usar o schema, como o agente faz |
 | `treino/` | O histórico de perdas (treino e validação) e as curvas dos dois treinos: `treino1` (3 épocas) e `treino2` (com adaptador por época e retorno ao melhor ponto da validação) |
 | `nivel2/` | O agente completo nas 25 tarefas, nas configurações A, B e C |
 
