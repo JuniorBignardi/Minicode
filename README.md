@@ -328,7 +328,7 @@ Cada exemplo é o prompt que o agente manda (pedido, spec e plano) e a resposta 
 ### Modelo e LoRA
 Qwen2.5-1.5B-Instruct com LoRA: o peso `W` fica congelado e aprendemos só `ΔW = B·A`, com `A ∈ ℝ^(r×d)`, `B ∈ ℝ^(d×r)` e `r ≪ d`, de modo que `W' = W + (α/r)·B·A`. `B` começa em zero, então o modelo parte idêntico ao original, e em vez de `d×d` parâmetros por matriz treinamos `2·r·d`. Com r=16 e α=32 nas 7 projeções de cada camada, são **18,46 milhões de parâmetros treináveis de 1,56 bilhão (1,18%)**, o que cabe numa GPU L4 do Colab. A perda é calculada só na resposta. 3 épocas (285 passos) em ~25 min.
 
-Notebooks (Colab, L4): [`notebooks/train.ipynb`](notebooks/train.ipynb) é o treino principal (adaptador das 3 épocas); [`notebooks/train_checkpoints.ipynb`](notebooks/train_checkpoints.ipynb) acrescenta um adaptador por época e a volta ao ponto de menor perda de validação. Curvas em [`experiments/resultados/treino/`](experiments/resultados/treino/): a perda de validação para de cair por volta do passo 175 (0,140) e sobe um pouco (0,154), ou seja, **sobreajuste leve na terceira época**.
+Notebook (Colab, L4): [`notebooks/train_checkpoints.ipynb`](notebooks/train_checkpoints.ipynb). Ele treina 3 épocas, salva um adaptador por época e volta ao ponto de menor perda de validação. O adaptador de 3 épocas avaliado no Nível 1 veio de uma execução anterior do mesmo treino, sem os checkpoints (mesmos dados, semente e hiperparâmetros); aqui ele corresponde ao `adaptador_epoca3`, e o do melhor ponto é o `adaptador`. A avaliação não é feita no notebook: está em `experiments/`. Curvas em [`experiments/resultados/treino/`](experiments/resultados/treino/): a perda de validação para de cair por volta do passo 175 (0,140) e sobe um pouco (0,154), ou seja, **sobreajuste leve na terceira época**.
 
 ### Nível 1: a função sozinha
 Os mesmos 60 prompts reais das 25 tarefas e 80 do teste sintético, para todos os modelos, com o formato forçado por JSON Schema (como o agente faz) e temperatura 0,3. Cada caso é executado na solução de referência (o **oráculo**): correto, errado ou inavaliável. Métrica: casos corretos ÷ (corretos + errados).
@@ -380,7 +380,7 @@ eval_tasks/     tarefas de avaliação com verificadores ocultos e o executor
 docs/           arquitetura detalhada
 experiments/    Parte 2: oráculo, avaliação (Nível 1 e 2), pipeline do dataset, resultados (ver experiments/README.md)
 datasets/       Parte 2: o dataset do plano de testes (754 / 79 / 80 exemplos)
-notebooks/      Parte 2: treino LoRA no Colab (train.ipynb e train_checkpoints.ipynb)
+notebooks/      Parte 2: treino LoRA no Colab (train_checkpoints.ipynb)
 ```
 
 ## 14. Uso de IA
