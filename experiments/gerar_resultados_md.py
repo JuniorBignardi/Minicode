@@ -241,6 +241,68 @@ O agente roda cada tarefa e o **teste oculto** decide se está correta. Três ve
 - **Pareado:** comparação em que cada tarefa é medida nos dois modelos, o que é mais sensível que comparar as médias.
 - **Ablação:** tirar um componente para ver se ele fazia diferença (aqui, a etapa do plano de testes).
 """
+    texto = texto.replace("# Resultados da Parte 2 (leitura rápida)", "# Resultados da Parte 2: anexo detalhado\n\nA versão curta, para ler primeiro, está em [`RESULTADOS.md`](RESULTADOS.md).", 1)
+    (RAIZ / "docs" / "RESULTADOS_DETALHADO.md").write_text(texto, encoding="utf-8")
+    print("escrito docs/RESULTADOS_DETALHADO.md,", len(texto.splitlines()), "linhas")
+
+
+def pareada_real(x, y):
+    dados = {n: an.carregar(a) for n, a in an.MODELOS.items()}
+    _, am = an.bootstrap(dados, [x, y], "real", "A")
+    difs = [s[0] - s[1] for s in am if s[0] is not None and s[1] is not None]
+    obs = an.metrica(list(dados[x]["real"].values()), "A") - an.metrica(list(dados[y]["real"].values()), "A")
+    lo, hi = an.intervalo(difs)
+    return obs, lo, hi
+
+
+def main_curto():
+    linhas = []
+    for arq, nome in (("q15_base_schema", "1,5B base (sem treino)"), ("q15_base_2exemplos_schema", "1,5B base com 2 exemplos no prompt"),
+                      ("q15_ajustado3ep_schema", "**1,5B treinado com LoRA**"), ("q14b_schema", "Qwen-14B (modelo grande)")):
+        r = json.loads((R / "nivel1" / f"{arq}_resumo.json").read_text(encoding="utf-8"))["real"]
+        linhas.append(f"| {nome} | **{pct(r['fracao_correta'], 0)}** | {100 * r['ic95'][0]:.0f}% a {100 * r['ic95'][1]:.0f}% |")
+    o1, l1, h1 = pareada_real("ajustado (3 épocas)", "base")
+    o2, l2, h2 = pareada_real("ajustado (3 épocas)", "14B")
+    d = json.loads((R / "nivel2" / "resumo.json").read_text(encoding="utf-8"))
+    linhas_md = [l for l in (R / "nivel2" / "resumo.md").read_text(encoding="utf-8").splitlines() if l.startswith("| ") and l[2] in "ABC" and l[3] == ":"]
+    n2 = []
+    for k, nome in (("A", "A: Qwen-14B sozinho"), ("B", "B: 1,5B treinado escreve o plano de testes + 14B"), ("C", "C: sem plano de testes (ablação)")):
+        cel = [c.strip() for c in [l for l in linhas_md if l[2] == k][0].split("|")]
+        it, ch = virgula(cel[6]), virgula(cel[7])   # colunas: iterações e chamadas ao LLM do resumo.md
+        n2.append(f"| {nome} | **{round(d[k]['task_success_rate'] * 25)}/25 = {pct(d[k]['task_success_rate'], 0)}** | {pct(d[k]['first_attempt'], 0)} | {it} | {ch} |")
+    texto = f"""# Resultados da Parte 2
+
+*Gerado por `experiments/gerar_resultados_md.py` a partir de `experiments/resultados/`. Detalhes e análises extras: [`RESULTADOS_DETALHADO.md`](RESULTADOS_DETALHADO.md).*
+
+## A pergunta
+Dá para treinar um modelo **pequeno** (Qwen 1,5B, com LoRA) para fazer **uma etapa** do agente, escrever o plano de testes, tão bem quanto um modelo **grande** (Qwen 14B)? E isso melhora o agente?
+
+## Função isolada (Nível 1): Accuracy dos testes que o modelo escreve
+O modelo escreve casos de teste (uma chamada e o valor esperado). Um programa executa cada chamada no código correto da tarefa e confere. **Accuracy = casos certos ÷ casos avaliados.** Prova: 60 pedidos das 25 tarefas da Parte 1, que o modelo nunca viu no treino.
+
+| Modelo | **Accuracy** | IC 95% |
+|---|---|---|
+{chr(10).join(linhas)}
+
+- Treinar elevou a Accuracy em **{virgula(f'{100 * o1:.0f}')} pontos** sobre o modelo sem treino (margem {100 * l1:+.0f} a {100 * h1:+.0f}). Isso é firme.
+- Contra o 14B o 1,5B fica **{virgula(f'{abs(100 * o2):.0f}')} pontos abaixo**, e a margem ({100 * l2:+.0f} a {100 * h2:+.0f}) inclui zero. Conclusão: **no mesmo nível**, não melhor.
+
+## O agente completo: as mesmas métricas da Parte 1 (25 tarefas, teste oculto decide)
+| Configuração | **TaskSuccessRate** | **FirstAttemptSuccess** | **AverageIterations** | **AverageLLMCalls** |
+|---|---|---|---|---|
+{chr(10).join(n2)}
+
+O treinado **não ajudou** o agente: B ficou abaixo de A, e o agente sem plano de testes (C) quase empatou com A. **A melhora na função isolada não virou melhora no agente.**
+
+## Em que confiar
+- **Firme:** a Accuracy acima. É calculado por código, sem opinião de pessoa nem de outro modelo, e as soluções corretas passam nos testes ocultos da Parte 1.
+- **Cuidado:** o agente completo tem só 25 tarefas e uma execução por configuração. Mostra que **não houve ganho**, mas não prova que o treinado atrapalha.
+- **Fora desta página:** auditorias manuais e outras formas de medir estão no anexo. Elas mantêm a conclusão de "mesmo nível", com uma ressalva: contando só os planos em que **todos** os casos estão certos, o 14B vai melhor (33% contra 20%).
+
+## O que NÃO dá para afirmar
+- Que o 1,5B é melhor que o 14B (só empata).
+- Que o resultado vale para outras tarefas além dessas 25.
+"""
     (RAIZ / "docs" / "RESULTADOS.md").write_text(texto, encoding="utf-8")
     print("escrito docs/RESULTADOS.md,", len(texto.splitlines()), "linhas")
 
@@ -248,4 +310,5 @@ O agente roda cada tarefa e o **teste oculto** decide se está correta. Três ve
 if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
+    main_curto()
     main()
