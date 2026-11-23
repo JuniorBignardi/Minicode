@@ -1,0 +1,72 @@
+{
+ "real_ajustado": {
+  "prompts": 60,
+  "tarefas": 25,
+  "formato_ok": 0.9833333333333333,
+  "planos_validos": 0.9,
+  "casos_corretos": 167,
+  "casos_errados": 85,
+  "casos_inavaliaveis": 24,
+  "fracao_correta": 0.6626984126984127,
+  "ic95": [
+   0.5547169811320755,
+   0.7811158798283262
+  ]
+ },
+ "real_base": {
+  "prompts": 60,
+  "tarefas": 25,
+  "formato_ok": 0.0,
+  "planos_validos": 0.0,
+  "casos_corretos": 0,
+  "casos_errados": 0,
+  "casos_inavaliaveis": 0,
+  "fracao_correta": null,
+  "ic95": [
+   null,
+   null
+  ]
+ },
+ "real_14b": {
+  "prompts": 60,
+  "tarefas": 25,
+  "formato_ok": 1.0,
+  "planos_validos": 0.8666666666666667,
+  "casos_corretos": 115,
+  "casos_errados": 73,
+  "casos_inavaliaveis": 56,
+  "fracao_correta": 0.6117021276595744,
+  "ic95": [
+   0.44787644787644787,
+   0.776255707762557
+  ]
+ },
+ "sintetico_ajustado": {
+  "prompts": 80,
+  "tarefas": 80,
+  "formato_ok": 0.9625,
+  "planos_validos": 0.8625,
+  "casos_corretos": 361,
+  "casos_errados": 182,
+  "casos_inavaliaveis": 3,
+  "fracao_correta": 0.6648250460405156,
+  "ic95": [
+   0.6084452975047985,
+   0.7221238938053097
+  ]
+ },
+ "sintetico_base": {
+  "prompts": 80,
+  "tarefas": 80,
+  "formato_ok": 0.0,
+  "planos_validos": 0.0,
+  "casos_corretos": 0,
+  "casos_errados": 0,
+  "casos_inavaliaveis": 0,
+  "fracao_correta": null,
+  "ic95": [
+   null,
+   null
+  ]
+ }
+}
