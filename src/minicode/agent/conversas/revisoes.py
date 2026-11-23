@@ -62,12 +62,13 @@ def rodar_revisao_spec(execucao, chat, raiz, tarefa, spec):
     return pedir_revisao(execucao, chat, raiz, "revisao_spec", "spec", mensagens, formato, interpretar_revisao_spec)
 
 
-def rodar_plano_de_testes(execucao, chat, raiz, tarefa, plano, correcao=None):
+def rodar_plano_de_testes(execucao, chat, raiz, tarefa, plano, correcao=None, chat_geracao=None):
     # Define os casos de teste ANTES do código. Dois controles do programa: todo critério da spec
     # precisa ter caso (o schema só aceita critérios que existem) e uma revisão confere o valor
     # esperado de cada caso. Devolve a lista de casos ([] se não saiu nenhum utilizável), ou None
     # se a execução falhou.
     # correcao: (casos_atuais, motivo) quando é a correção de um plano que um teste mostrou estar errado.
+    # chat_geracao: modelo especializado que escreve só a primeira versão; a revisão e as correções usam o chat normal.
     criterios = criterios_da_spec(execucao.spec)
     mensagens = mensagens_plano_de_testes(tarefa, execucao.spec, plano)
     if correcao:
@@ -79,7 +80,10 @@ def rodar_plano_de_testes(execucao, chat, raiz, tarefa, plano, correcao=None):
 
     casos = []
     for rodada in range(MAX_CORRECOES_DO_PLANO_DE_TESTES + 1):
-        resposta = pedir_resposta(execucao, chat, mensagens, raiz, "plano_de_testes", formato)
+        gerador = chat_geracao if chat_geracao and rodada == 0 else chat
+        if gerador is chat_geracao:
+            registrar_evento(raiz, {"tipo": "plano_de_testes_especialista"})
+        resposta = pedir_resposta(execucao, gerador, mensagens, raiz, "plano_de_testes", formato)
         if resposta is None:
             return None
 

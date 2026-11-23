@@ -58,11 +58,13 @@ def resumir(texto, limite=110):
 
 # --- sessão ---
 
-def cabecalho(raiz, modelo):
+def cabecalho(raiz, modelo, modelo_plano_de_testes=None):
     if os.name == "nt":
         os.system("")   # liga as sequências de cor no terminal do Windows
     escrever(cor("MiniCode", "negrito", "ciano") + " — agente de programação com spec, testes e hard gates")
     escrever(cor(f"projeto: {raiz}   modelo: {modelo}", "cinza"))
+    if modelo_plano_de_testes:
+        escrever(cor(f"plano de testes escrito por: {modelo_plano_de_testes}   (o resto continua com {modelo})", "amarelo"))
     escrever(cor("Descreva a tarefa. Comandos: /ajuda  /spec  /plano  /diff  /log  /sair", "cinza"))
 
 

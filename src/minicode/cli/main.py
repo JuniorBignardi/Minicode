@@ -65,9 +65,9 @@ def comando(texto, raiz, ultima):
         tela.aviso("comando desconhecido; digite /ajuda")
 
 
-def rodar_tarefa(tarefa, raiz, chat):
+def rodar_tarefa(tarefa, raiz, chat, chat_plano_de_testes=None):
     inicio = time.time()
-    execucao = rodar_agente(tarefa, raiz, chat)
+    execucao = rodar_agente(tarefa, raiz, chat, chat_plano_de_testes=chat_plano_de_testes)
     tela.final(execucao, raiz, time.time() - inicio)
     return execucao
 
@@ -78,18 +78,20 @@ def main():
 
     # o cliente é importado depois da conferência, para que importar este módulo não exija o .env
     conferir_ambiente()
-    from minicode.llm.client import chat
+    from minicode.llm.client import chat, chat_especialista
+    especialista = chat_especialista()   # None se MINICODE_PLAN_API_BASE / MINICODE_PLAN_MODEL não estiverem definidos
 
     # o projeto é a pasta onde o comando foi executado
     raiz = Path.cwd()
+    modelo_do_plano = os.environ.get("MINICODE_PLAN_MODEL") if especialista else None
 
     # minicode "pedido": roda uma tarefa e sai (código 0 se concluiu)
     if len(sys.argv) > 1:
-        tela.cabecalho(raiz, os.environ["MINICODE_MODEL"])
-        execucao = rodar_tarefa(" ".join(sys.argv[1:]), raiz, chat)
+        tela.cabecalho(raiz, os.environ["MINICODE_MODEL"], modelo_do_plano)
+        execucao = rodar_tarefa(" ".join(sys.argv[1:]), raiz, chat, especialista)
         sys.exit(0 if execucao.estado == DONE else 1)
 
-    tela.cabecalho(raiz, os.environ["MINICODE_MODEL"])
+    tela.cabecalho(raiz, os.environ["MINICODE_MODEL"], modelo_do_plano)
     ultima = None
     while True:
         try:
@@ -106,7 +108,7 @@ def main():
             continue
 
         try:
-            ultima = rodar_tarefa(texto, raiz, chat)
+            ultima = rodar_tarefa(texto, raiz, chat, especialista)
         except KeyboardInterrupt:
             tela.aviso("execução interrompida; os arquivos já gravados continuam no projeto")
 

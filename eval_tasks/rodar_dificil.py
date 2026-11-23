@@ -16,11 +16,18 @@ OPCOES = {}
 for par in filter(None, os.environ.get("MINICODE_ABLACAO", "").split(",")):
     nome, valor = par.split("=")
     OPCOES[nome] = int(valor) if valor.isdigit() else valor == "True"
-print("opções do agente:", OPCOES or "configuração completa", flush=True)
-from minicode.llm.client import chat as chat_real
+from minicode.llm.client import chat as chat_real, chat_especialista
+
+# Parte 2: com MINICODE_PLAN_API_BASE e MINICODE_PLAN_MODEL, o plano de testes é escrito pelo modelo especializado
+especialista = chat_especialista()
+if especialista:
+    OPCOES["chat_plano_de_testes"] = especialista
+print("opções do agente:", {k: v for k, v in OPCOES.items() if k != "chat_plano_de_testes"} or "configuração completa",
+      "| plano de testes:", os.environ.get("MINICODE_PLAN_MODEL", "o mesmo modelo"), flush=True)
+PAUSA = float(os.environ.get("MINICODE_PAUSA", "1"))   # o endpoint da faculdade pedia 1 s entre chamadas; servidor próprio: 0
 
 def chat(mensagens, temperature=0, **kw):
-    time.sleep(1)  # pausa entre chamadas: o endpoint é da faculdade
+    time.sleep(PAUSA)
     return chat_real(mensagens, temperature=temperature, **kw)
 
 

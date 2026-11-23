@@ -183,3 +183,7 @@ Eventos mais úteis em `actions.jsonl`:
 ## 10. Tolerância a falhas do modelo
 
 O executor trata o modelo como fonte **não confiável**: ferramenta fora da allowlist, argumentos faltando ou extras e erros viram **observações de erro** que o modelo pode ler e corrigir, em vez de exceções que derrubam o programa. A chamada ao endpoint tem tempo limite e erro de rede vira `FAILED` com o motivo registrado.
+
+## 11. Modelo especializado na etapa do plano de testes (Parte 2)
+
+O orquestrador aceita um segundo cliente de LLM, `chat_plano_de_testes`, usado **só** para a primeira geração do plano de testes (`rodar_plano_de_testes(..., chat_geracao=...)`, rodada 0). A revisão do plano, as correções, a spec, o plano, a implementação, o diagnóstico e o reparo continuam no modelo principal, de modo que o especialista, treinado só para escrever o plano do zero, nunca revisa nem corrige. O cliente é criado por `llm/client.py:chat_especialista()` a partir de `MINICODE_PLAN_API_BASE` e `MINICODE_PLAN_MODEL` e vale `None` quando não estão definidos, o que mantém o comportamento da Parte 1. Cada uso grava o evento `plano_de_testes_especialista` em `actions.jsonl`. Os testes estão em `tests/test_plano_de_testes.py`.

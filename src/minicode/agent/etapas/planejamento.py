@@ -61,10 +61,10 @@ def fazer_plano(execucao, chat, raiz):
     return True
 
 
-def fazer_plano_de_testes(execucao, chat, raiz):
+def fazer_plano_de_testes(execucao, chat, raiz, chat_geracao=None):
     # os casos de teste e seus valores esperados, definidos antes do código
     tela.etapa("plano_de_testes", "Plano de testes")
-    casos = rodar_plano_de_testes(execucao, chat, raiz, execucao.tarefa, execucao.plano)
+    casos = rodar_plano_de_testes(execucao, chat, raiz, execucao.tarefa, execucao.plano, chat_geracao=chat_geracao)
     if casos is None:
         return False
 

@@ -47,7 +47,16 @@ python eval_tasks/rodar_dificil.py /caminho/da/saida
 python eval_tasks/rodar_dificil.py /caminho/da/saida 3 5     # só as tarefas 3 e 5
 ```
 
-O executor espera 1 s entre chamadas (o endpoint é compartilhado). Um conjunto difícil leva de 10 a 15 minutos.
+O executor espera 1 s entre chamadas (o endpoint era compartilhado); com servidor próprio use `MINICODE_PAUSA=0`. Na Parte 1, um conjunto difícil levava de 10 a 15 minutos com uma tarefa por vez. Na Parte 2, com três configurações rodando em paralelo no mesmo servidor, a duração sobe bastante (dezenas de minutos).
+
+**Parte 2 (ablação e modelo especializado).** Os mesmos executores aceitam:
+
+```bash
+MINICODE_ABLACAO="planejar_testes=False" python eval_tasks/rodar_facil.py /saida                      # sem a etapa do plano de testes
+MINICODE_PLAN_API_BASE=<url>/v1 MINICODE_PLAN_MODEL=<modelo> python eval_tasks/rodar_facil.py /saida   # o modelo especializado escreve o plano
+```
+
+Para rodar as três configurações (A, B e C) com repetições e resumo estatístico, use `experiments/nivel2.py` (ver `experiments/README.md`).
 
 ## Cuidados com a interpretação
 

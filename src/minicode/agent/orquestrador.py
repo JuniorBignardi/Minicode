@@ -112,7 +112,9 @@ def implementar_e_reparar(execucao, chat, raiz):
 
 
 def rodar_agente(tarefa, raiz, chat, max_tentativas=3, max_iteracoes=40, revisar_spec=True, modo_debug=None,
-                 diagnosticar=True, planejar_testes=True):
+                 diagnosticar=True, planejar_testes=True, chat_plano_de_testes=None):
+    # chat_plano_de_testes: modelo especializado que escreve a primeira versão do plano de testes (Parte 2).
+    # A revisão, as correções e todas as outras fases continuam com "chat".
     raiz = Path(raiz).resolve()
     execucao = preparar_execucao(tarefa, raiz, max_tentativas, max_iteracoes, revisar_spec, modo_debug, diagnosticar)
 
@@ -120,7 +122,7 @@ def rodar_agente(tarefa, raiz, chat, max_tentativas=3, max_iteracoes=40, revisar
         return finalizar(execucao, raiz)
     if not fazer_plano(execucao, chat, raiz):
         return finalizar(execucao, raiz)
-    if planejar_testes and not fazer_plano_de_testes(execucao, chat, raiz):
+    if planejar_testes and not fazer_plano_de_testes(execucao, chat, raiz, chat_plano_de_testes):
         return finalizar(execucao, raiz)
 
     avancar(execucao, raiz, IMPLEMENTING)

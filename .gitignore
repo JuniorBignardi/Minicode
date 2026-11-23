@@ -13,3 +13,12 @@ STATUS.md
 
 # rastros de execução do agente
 .minicode/
+
+# execuções brutas dos experimentos da Parte 2 (rastros e cópias grandes)
+experiments/execucoes/
+
+# pesos do modelo treinado (adaptadores LoRA, ~70 MB cada): o enunciado diz que não precisam ir ao GitHub; ficam no Drive
+pesos_lora/
+
+# estado interno do gerador de exercícios (temas já sorteados)
+experiments/dataset/temas_usados.json

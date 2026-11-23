@@ -154,6 +154,56 @@ def test_depois_das_correcoes_segue_com_a_ultima_versao(tmp_path):
     assert "plano_de_testes_reprovado_seguindo" in eventos
 
 
+def rodar_com_especialista(a_execucao, chat, especialista, raiz):
+    iniciar_registro(raiz, "crie fatorial")
+    return rodar_plano_de_testes(a_execucao, chat, raiz, "crie fatorial", "1. criar", chat_geracao=especialista)
+
+
+def test_o_especialista_escreve_o_plano_e_o_chat_normal_so_revisa(tmp_path):
+    especialista, chamadas_esp = chat_do_plano([resposta_do_plano(casos_completos())])
+    chat, chamadas = chat_do_plano([revisao_do_plano(True)])
+
+    casos = rodar_com_especialista(execucao_com_spec(), chat, especialista, tmp_path)
+
+    assert casos == casos_completos()
+    assert chamadas_esp == ["plano_de_testes"]
+    assert chamadas == ["revisao_plano_de_testes"]
+    assert "plano_de_testes_especialista" in (tmp_path / ".minicode" / "actions.jsonl").read_text(encoding="utf-8")
+
+
+def test_se_a_revisao_reprova_quem_corrige_e_o_chat_normal(tmp_path):
+    especialista, chamadas_esp = chat_do_plano([resposta_do_plano(casos_completos())])
+    chat, chamadas = chat_do_plano([revisao_do_plano(False, "fatorial(5) é 120"), resposta_do_plano(casos_completos()), revisao_do_plano(True)])
+
+    casos = rodar_com_especialista(execucao_com_spec(), chat, especialista, tmp_path)
+
+    assert casos == casos_completos()
+    assert chamadas_esp == ["plano_de_testes"]   # o especialista escreve só a primeira versão
+    assert chamadas == ["revisao_plano_de_testes", "plano_de_testes", "revisao_plano_de_testes"]
+
+
+def test_sem_especialista_tudo_continua_no_chat_normal(tmp_path):
+    chat, chamadas = chat_do_plano([resposta_do_plano(casos_completos()), revisao_do_plano(True)])
+
+    rodar_com_especialista(execucao_com_spec(), chat, None, tmp_path)
+
+    assert chamadas == ["plano_de_testes", "revisao_plano_de_testes"]
+    assert "plano_de_testes_especialista" not in (tmp_path / ".minicode" / "actions.jsonl").read_text(encoding="utf-8")
+
+
+def test_chat_especialista_so_existe_quando_configurado(monkeypatch):
+    monkeypatch.setenv("MINICODE_API_BASE", "http://localhost:1/v1")
+    monkeypatch.setenv("MINICODE_API_KEY", "x")
+    from minicode.llm.client import chat_especialista
+    monkeypatch.delenv("MINICODE_PLAN_API_BASE", raising=False)
+    monkeypatch.delenv("MINICODE_PLAN_MODEL", raising=False)
+    assert chat_especialista() is None
+    monkeypatch.setenv("MINICODE_PLAN_API_BASE", "http://localhost:2/v1")
+    assert chat_especialista() is None   # falta o modelo
+    monkeypatch.setenv("MINICODE_PLAN_MODEL", "minicode-lora")
+    assert callable(chat_especialista())
+
+
 def test_sem_revisao_ligada_o_plano_nao_e_revisado(tmp_path):
     execucao = execucao_com_spec()
     execucao.exige_revisao = False
