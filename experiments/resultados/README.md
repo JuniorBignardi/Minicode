@@ -9,4 +9,4 @@ Tudo aqui é saída gerada pelos scripts de `experiments/`, copiada de `experime
 | `treino/` | O histórico de perdas (treino e validação) e as curvas dos dois treinos: `treino1` (3 épocas) e `treino2` (com adaptador por época e retorno ao melhor ponto da validação) |
 | `nivel2/` | O agente completo nas 25 tarefas, nas configurações A, B e C |
 
-Os pesos do modelo (adaptadores LoRA, ~70 MB cada) não estão no repositório, como o enunciado permite.
+Os pesos do modelo (adaptadores LoRA, ~70 MB cada) não estão no repositório, como o enunciado permite: estão [nesta pasta do Google Drive](https://drive.google.com/drive/folders/1N4rfJPWTsBHQek1-lflZ8nffpZXw1j9H?usp=sharing).

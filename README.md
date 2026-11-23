@@ -336,6 +336,9 @@ Qwen2.5-1.5B-Instruct com LoRA: o peso `W` fica congelado e aprendemos só `ΔW 
 
 Notebook (Colab, L4): [`notebooks/train_checkpoints.ipynb`](notebooks/train_checkpoints.ipynb). Ele treina 3 épocas, salva um adaptador por época e volta ao ponto de menor perda de validação. O adaptador de 3 épocas avaliado no Nível 1 veio de uma execução anterior do mesmo treino, sem os checkpoints (mesmos dados, semente e hiperparâmetros); aqui ele corresponde ao `adaptador_epoca3`, e o do melhor ponto é o `adaptador`. A avaliação não é feita no notebook: está em `experiments/`. Curvas em [`experiments/resultados/treino/`](experiments/resultados/treino/): a perda de validação para de cair por volta do passo 175 (0,140) e sobe um pouco (0,154), ou seja, **sobreajuste leve na terceira época**.
 
+### Pesos do modelo treinado
+Os adaptadores LoRA ficam fora do repositório, [nesta pasta do Google Drive](https://drive.google.com/drive/folders/1N4rfJPWTsBHQek1-lflZ8nffpZXw1j9H?usp=sharing). São adaptadores do `Qwen/Qwen2.5-1.5B-Instruct` (r=16, alpha=32, nas 7 projeções de cada camada): o treino de 3 épocas avaliado no Nível 1, o do melhor ponto da validação e os de cada época. Para usar, baixe e descompacte um deles e carregue sobre o modelo base, por exemplo com PEFT (`PeftModel.from_pretrained(modelo_base, pasta_do_adaptador)`) ou servindo com vLLM (`--enable-lora --lora-modules nome=pasta --max-lora-rank 16`).
+
 ### Nível 1: a função sozinha
 Os mesmos 60 prompts reais das 25 tarefas e 80 do teste sintético, para todos os modelos, com o formato forçado por JSON Schema (como o agente faz) e temperatura 0,3. Cada caso é executado na solução de referência (o **oráculo**): correto, errado ou inavaliável. Métrica: casos corretos ÷ (corretos + errados).
 
@@ -374,7 +377,7 @@ Uma execução por configuração, 75 execuções no total, sem nenhum erro de i
 - **Ressalvas:** só uma execução por configuração (a Parte 1 mediu até 20 pontos de ruído entre rodadas) e os tempos por tarefa não são comparáveis, porque as três configurações rodaram juntas no mesmo servidor.
 
 ### Reproduzir
-`pip install -e ".[dev]"`; o treino roda nos notebooks do Colab com a pasta `datasets/plano_de_testes/` (o notebook lê `exemplos_*.jsonl` e `entradas_reais.json`) e instala `peft` sozinho. A avaliação e a geração do dataset estão em [experiments/README.md](experiments/README.md). Os pesos dos adaptadores não estão no repositório.
+`pip install -e ".[dev]"`; o treino roda nos notebooks do Colab com a pasta `datasets/plano_de_testes/` (o notebook lê `exemplos_*.jsonl` e `entradas_reais.json`) e instala `peft` sozinho. A avaliação e a geração do dataset estão em [experiments/README.md](experiments/README.md). Os pesos dos adaptadores (arquivos `.zip` de ~70 MB cada) **não estão no repositório**, como o enunciado permite: estão [nesta pasta do Google Drive](https://drive.google.com/drive/folders/1N4rfJPWTsBHQek1-lflZ8nffpZXw1j9H?usp=sharing).
 
 ## 13. Estrutura do repositório
 
